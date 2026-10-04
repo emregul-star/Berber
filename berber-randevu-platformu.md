@@ -182,9 +182,12 @@ Tüm tablolarda `id uuid primary key default gen_random_uuid()` ve `created_at t
 ### 5.7 `barber_services` — Hangi berber hangi hizmeti veriyor
 | Alan | Tip |
 |---|---|
+| shop_id | uuid |
 | barber_id | uuid |
 | service_id | uuid |
 | primary key (barber_id, service_id) | |
+
+**Uygulama notu (Aşama 2):** `shop_id` sonradan eklendi. Berber ve hizmet referansları tüm tablolarda (`barber_services`, `working_hours`, `time_off`, `appointments`) `(id, shop_id)` ikilisiyle bileşik foreign key kullanır; böylece bir dükkanın kaydı başka dükkanın berberine/hizmetine bağlanamaz. Yeni dükkan eklendiğinde varsayılan `shop_settings` satırı bir trigger ile otomatik oluşturulur.
 
 ### 5.8 `working_hours` — Haftalık çalışma saatleri
 | Alan | Tip | Açıklama |

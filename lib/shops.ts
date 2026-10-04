@@ -1,31 +1,51 @@
 /**
  * Dükkan bilgisini okuma yardımcıları.
- *
- * AŞAMA 1 GEÇİCİ: Veritabanı tabloları Aşama 2'de oluşturulacak. O zamana kadar
- * yönlendirmeyi test edebilmek için sadece "demo" dükkanını içeren sabit bir liste
- * kullanılıyor. Aşama 2'de bu fonksiyonların içi Supabase sorgusuyla değiştirilecek;
- * fonksiyon imzaları aynı kalacağı için onları kullanan sayfalar değişmeyecek.
  */
 import "server-only";
 import { cache } from "react";
+import { createAdminClient } from "./supabase/admin";
 import { isValidSlug } from "./tenant";
 
 export type ShopStatus = "active" | "suspended" | "demo";
 
 export type Shop = {
+  id: string;
   slug: string;
   name: string;
   status: ShopStatus;
+  isDemo: boolean;
 };
-
-// TODO(Aşama 2): Supabase'deki shops tablosuyla değiştirilecek.
-const TEMP_SHOPS: Shop[] = [{ slug: "demo", name: "Demo Berber", status: "demo" }];
 
 /**
  * Slug'a göre dükkanı getirir; yoksa null.
+ *
+ * Neden secret key (admin) istemcisi? RLS, askıdaki dükkanları ziyaretçiden gizler.
+ * Biz ise askıdaki dükkan için "Dükkan bulunamadı" değil "geçici olarak hizmet dışı"
+ * göstermek istiyoruz. Bu yüzden durumu sunucuda RLS'siz okuyoruz ve sadece
+ * zararsız alanları (ad, slug, durum) döndürüyoruz.
+ *
  * cache(): aynı istek içinde layout ve sayfa ayrı ayrı çağırsa bile sorgu bir kez çalışır.
  */
 export const getShopBySlug = cache(async (slug: string): Promise<Shop | null> => {
   if (!isValidSlug(slug)) return null;
-  return TEMP_SHOPS.find((shop) => shop.slug === slug) ?? null;
+
+  const { data, error } = await createAdminClient()
+    .from("shops")
+    .select("id, slug, name, status, is_demo")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) {
+    // Veritabanı hatası kullanıcıya "bulunamadı" gibi görünmesin; hata sayfasına düşsün.
+    throw new Error(`Dükkan okunamadı (${slug}): ${error.message}`);
+  }
+  if (!data) return null;
+
+  return {
+    id: data.id,
+    slug: data.slug,
+    name: data.name,
+    status: data.status as ShopStatus,
+    isDemo: data.is_demo,
+  };
 });

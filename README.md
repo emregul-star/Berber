@@ -44,6 +44,29 @@ Modern tarayıcılar `*.localhost` adreslerini ek ayar gerektirmeden bilgisayar�
 | `npm run start` | Derlenmiş uygulamayı çalıştırır |
 | `npm run lint` | Kod kontrolü (ESLint) |
 | `npm test` | Birim testleri (Vitest) |
+| `npm run db:push` | Yeni migration'ları Supabase'e uygular |
+| `npm run db:seed` | Demo dükkanı sıfırlayıp yeniden oluşturur |
+| `npm run db:test` | Güvenlik (RLS) kontrollerini çalıştırır; tüm satırlarda `passed: true` olmalı |
+| `npm run db:advisors` | Supabase güvenlik/performans denetimi |
+| `npm run db:types` | Veritabanından TypeScript tiplerini yeniden üretir |
+
+## Veritabanı (Supabase CLI)
+
+İlk kurulumda bir kez (proje klasöründeki terminalde):
+
+```bash
+npx supabase login
+npx supabase link --project-ref <PROJE_REF>
+npm run db:push
+npm run db:seed
+```
+
+- Şema, güvenlik kuralları ve storage ayarları `supabase/migrations/` altındadır. Veritabanı
+  değişiklikleri her zaman yeni bir migration dosyasıyla yapılır: `npx supabase migration new <ad>`.
+- Yeni tablo eklerken `anon` / `authenticated` yetkileri (GRANT) ve RLS politikaları aynı
+  migration'da açıkça yazılmalıdır; Supabase yeni tabloları otomatik olarak dışarı açmaz.
+- Süper yönetici eklemek için (kullanıcı Supabase Auth'ta oluşturulduktan sonra):
+  `npx supabase db query --linked "insert into platform_admins (user_id) select id from auth.users where email = 'siz@ornek.com'"`
 
 ## Nasıl çalışır? (kısaca)
 

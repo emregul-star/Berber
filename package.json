@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:push": "supabase db push --linked",
+    "db:seed": "supabase db query --linked -f supabase/seed.sql",
+    "db:test": "supabase db query --linked -f supabase/tests/security_check.sql",
+    "db:advisors": "supabase db advisors --linked --type all",
+    "db:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
@@ -25,6 +30,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
+    "supabase": "2.119.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "5.0.3"

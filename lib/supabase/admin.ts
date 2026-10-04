@@ -7,6 +7,7 @@
  */
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
 
 export function createAdminClient() {
   const secretKey = process.env.SUPABASE_SECRET_KEY;
@@ -14,7 +15,7 @@ export function createAdminClient() {
     throw new Error("SUPABASE_SECRET_KEY tanımlı değil (.env.local dosyasını kontrol edin).");
   }
 
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, secretKey, {
+  return createClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, secretKey, {
     auth: {
       // Sunucu tarafı istemci: oturum saklanmaz, token yenilenmez.
       persistSession: false,
