@@ -37,8 +37,18 @@ export function safeGoogleMapsEmbedUrl(url: string | null | undefined): string |
   return hostOk && pathOk && isEmbed ? safe : null;
 }
 
+const isLocalPlatform = () => PLATFORM_DOMAIN.startsWith("localhost");
+
 /** Platformun ana sayfası (ör. https://berberplatform.com, yerelde http://localhost:3000) */
 export function platformHomeUrl(): string {
-  const isLocal = PLATFORM_DOMAIN.startsWith("localhost");
-  return `${isLocal ? "http" : "https"}://${PLATFORM_DOMAIN}`;
+  return `${isLocalPlatform() ? "http" : "https"}://${PLATFORM_DOMAIN}`;
+}
+
+/**
+ * Dükkan sitesinin tam adresi (e-postalardaki linkler için).
+ * Kendi alan adı varsa o kullanılır: https://kralberber.com, yoksa https://{slug}.PLATFORM_DOMAIN
+ */
+export function shopBaseUrl(slug: string, customDomain?: string | null): string {
+  if (customDomain) return `https://${customDomain}`;
+  return `${isLocalPlatform() ? "http" : "https"}://${slug}.${PLATFORM_DOMAIN}`;
 }

@@ -15,4 +15,12 @@ export const whatsappTemplates = {
   /** Müşteri sitesindeki genel WhatsApp butonu */
   generalInquiry: (shopName: string) =>
     `Merhaba ${shopName}, randevu hakkında bilgi almak istiyorum.`,
+
+  /** Randevu onay ekranı: "WhatsApp'tan dükkana bildir" */
+  bookingNotice: (b: { customerName: string; serviceName: string; barberName: string; whenLabel: string }) =>
+    `Merhaba, online randevu aldım.\n` +
+    `Ad Soyad: ${b.customerName}\n` +
+    `Hizmet: ${b.serviceName}\n` +
+    `Berber: ${b.barberName}\n` +
+    `Tarih: ${b.whenLabel}`,
 };

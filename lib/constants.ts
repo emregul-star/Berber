@@ -51,5 +51,15 @@ export const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
  */
 export const DATA_RETENTION_MONTHS = 24;
 
+/**
+ * Randevu formu spam koruması (Bölüm 6.5). Değerler buradan ayarlanabilir.
+ */
+export const BOOKING_LIMITS = {
+  /** Aynı IP adresinden bu süre içinde en fazla bu kadar randevu denemesi */
+  perIp: { max: 5, windowSeconds: 10 * 60 },
+  /** Aynı telefon numarasının aynı dükkanda aynı anda en fazla bu kadar aktif (gelecek) randevusu olabilir */
+  maxActivePerPhone: 3,
+} as const;
+
 /** Geliştirme modunda ?shop=slug ile seçilen dükkanın hatırlandığı çerez. */
 export const DEV_SHOP_COOKIE = "dev_shop";

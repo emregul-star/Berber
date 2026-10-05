@@ -82,6 +82,29 @@ tema seçer ve isterse ana/vurgu rengini değiştirir. Renkler sayfaya CSS deği
 Tailwind sınıfları (`bg-bg`, `text-text`, `bg-primary`, `text-on-primary` ...) bunları kullanır.
 Hazır temaların okunabilirliği (kontrast) birim testleriyle kontrol edilir.
 
+## Randevu alma (kısaca)
+
+- Müsaitlik algoritması `lib/availability.ts` içinde saf fonksiyondur; testleri `lib/availability.test.ts`.
+- Boş saatler `GET /randevu-al/saatler` uç noktasından gelir; randevu `randevu-al/actions.ts`
+  Server Action'ıyla sunucuda oluşturulur (honeypot, IP hız sınırı, telefon kontrolü, saat yeniden doğrulama).
+- Aynı saate iki randevu veritabanı kuralıyla engellenir; müşteri "Bu saat az önce doldu" mesajı görür.
+- Spam limitleri `lib/constants.ts` içindeki `BOOKING_LIMITS` ile ayarlanır.
+- Müşteri randevusunu `/randevu/{token}` sayfasından iptal eder veya saatini değiştirir
+  (`lib/manage.ts`). İzin kuralı (`cancel_deadline_minutes`) `lib/manage-rules.ts` içinde saf
+  fonksiyondur; hem sayfa hem sunucu aynı kuralı kullanır. Sayfa arama motorlarına kapalıdır.
+
+## E-posta bildirimleri
+
+- Sağlayıcı: [Resend](https://resend.com) (ücretsiz plan: ayda 3.000, günde 100 e-posta).
+  Kod `lib/notifications/` altındadır; e-posta ve (şimdilik boş) SMS sağlayıcısı aynı arayüzü uygular.
+- `.env.local` içinde `EMAIL_PROVIDER_API_KEY` tanımlı değilse e-posta gönderimi kapalıdır.
+  `EMAIL_FROM` boşsa gönderen `onboarding@resend.dev` olur.
+- **Alan adı doğrulanmadan** Resend sadece hesap sahibinin adresine ve test adreslerine
+  (`delivered@resend.dev`) gönderir. Gerçek müşterilere gönderim için Resend'de alan adı
+  doğrulanmalı ve `EMAIL_FROM` o alan adından bir adres olmalıdır (bkz. Bölüm 16, madde 6).
+- E-postalar yanıt gönderildikten sonra (`after()`) gider; başarısız olursa randevu etkilenmez,
+  hata sunucu loglarına yazılır. **Demo dükkanda hiçbir e-posta gönderilmez.**
+
 ## Nasıl çalışır? (kısaca)
 
 `proxy.ts` her istekte host'a bakar ve isteği dahili klasörlere yönlendirir:

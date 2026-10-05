@@ -349,6 +349,7 @@ Supabase'de (2026 itibarıyla) `public` şemasında yeni oluşturulan tablolar D
 ### 6.5 Spam ve kötüye kullanım koruması
 - Randevu formunda görünmez honeypot alanı; doluysa istek sessizce reddedilir.
 - Hız sınırı: aynı IP'den 10 dakikada en fazla 5, aynı telefon numarasından günde en fazla 3 aktif gelecek randevu (değerler sabit dosyasında ayarlanabilir).
+  - **Uygulama notu (Aşama 4):** IP sınırı veritabanındaki `rate_limit_hit` fonksiyonuyla (sabit pencere) uygulanır. Telefon sınırı "aynı telefonun aynı dükkanda aynı anda en fazla 3 aktif (pending/confirmed) gelecek randevusu" olarak yorumlandı (`BOOKING_LIMITS`, `lib/constants.ts`). Müşteri telefonu olarak sadece cep numarası (5xx) kabul edilir.
 - Telefon numarası Türkiye formatına göre doğrulanıp normalize edilir.
 - Cloudflare Turnstile entegrasyonu ortam değişkeni varsa açılır, yoksa devre dışı kalır.
 
@@ -390,6 +391,8 @@ Girdi: dükkan, hizmet, berber (veya hepsi), tarih.
 5. Kalan aralıklarda `slot_interval_minutes` adımlarıyla başlangıç saatleri üret; hizmet süresi + buffer sığmayanları ele.
 6. Şu andan `min_notice_minutes` sonrasından önceki saatleri ele.
 7. Tüm hesaplar Europe/Istanbul saatine göre yapılır.
+
+**Uygulama notu (Aşama 4):** Kapanış saatinde buffer'ın sığması gerekmez; hizmetin kapanıştan önce bitmesi yeterlidir (temizlik payı bir sonraki randevu içindir). Mola sadece hizmet süresiyle, mevcut randevu ve izinler ise buffer dahil meşgul aralıkla karşılaştırılır. Sunucu, müşterinin seçtiği saati kaydetmeden önce aynı algoritmayla yeniden doğrular.
 
 Bu algoritma ayrı bir modülde (`lib/availability.ts`) saf fonksiyon olarak yazılmalı ve birim testleri olmalı.
 
