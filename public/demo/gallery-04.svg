@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+  <defs>
+    <radialGradient id="g" cx="30%" cy="25%" r="90%">
+      <stop offset="0" stop-color="#9fc5d8" stop-opacity="0.35"/>
+      <stop offset="0.55" stop-color="#18232b"/>
+      <stop offset="1" stop-color="#0b0b0b"/>
+    </radialGradient>
+    <pattern id="p" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="2" height="28" fill="#9fc5d8" fill-opacity="0.06"/>
+    </pattern>
+  </defs>
+  <rect width="600" height="600" fill="url(#g)"/>
+  <rect width="600" height="600" fill="url(#p)"/>
+  <circle cx="300" cy="300" r="150" fill="none" stroke="#9fc5d8" stroke-opacity="0.25" stroke-width="2"/>
+  <g transform="translate(300 300) scale(3.2)" fill="none" stroke="#9fc5d8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M-30 6 h44 a6 6 0 0 0 6 -6 v-6 h-50z"/><path d="M14 -6 l18 -18"/><path d="M-26 6 v8 h36 v-8"/></g>
+</svg>

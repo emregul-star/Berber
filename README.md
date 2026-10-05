@@ -68,6 +68,20 @@ npm run db:seed
 - Süper yönetici eklemek için (kullanıcı Supabase Auth'ta oluşturulduktan sonra):
   `npx supabase db query --linked "insert into platform_admins (user_id) select id from auth.users where email = 'siz@ornek.com'"`
 
+## ⚠️ KVKK aydınlatma metni hakkında
+
+Dükkan sitelerindeki `/kvkk` sayfası (`app/sites/[slug]/(site)/kvkk/page.tsx`) bir **taslaktır**
+ve hukuki danışmanlık yerine geçmez. Gerçek bir dükkan için yayına almadan önce mutlaka bir
+hukukçuya (KVKK alanında uzman bir avukata) kontrol ettirin. Özellikle yurt dışına veri aktarımı
+(barındırma ve e-posta servisleri) ve hukuki sebepler bölümleri gözden geçirilmelidir.
+
+## Temalar
+
+Dükkan temaları `lib/themes.ts` içindedir: `luxury`, `modern`, `classic`, `fresh`. Her dükkan bir
+tema seçer ve isterse ana/vurgu rengini değiştirir. Renkler sayfaya CSS değişkeni olarak basılır,
+Tailwind sınıfları (`bg-bg`, `text-text`, `bg-primary`, `text-on-primary` ...) bunları kullanır.
+Hazır temaların okunabilirliği (kontrast) birim testleriyle kontrol edilir.
+
 ## Nasıl çalışır? (kısaca)
 
 `proxy.ts` her istekte host'a bakar ve isteği dahili klasörlere yönlendirir:

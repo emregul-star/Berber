@@ -45,5 +45,11 @@ export const RESERVED_SUBDOMAINS = [
  */
 export const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
+/**
+ * KVKK: Tamamlanmış/iptal randevulardaki müşteri iletişim bilgileri kaç ay sonra
+ * anonimleştirilir (Bölüm 7.5). KVKK aydınlatma metninde de bu süre yazar.
+ */
+export const DATA_RETENTION_MONTHS = 24;
+
 /** Geliştirme modunda ?shop=slug ile seçilen dükkanın hatırlandığı çerez. */
 export const DEV_SHOP_COOKIE = "dev_shop";

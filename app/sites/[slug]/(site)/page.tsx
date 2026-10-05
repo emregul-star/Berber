@@ -1,22 +1,42 @@
 /**
  * Dükkanın müşteri sitesi ana sayfası ({slug}.PLATFORM_DOMAIN).
- * Aşama 1 yer tutucusu; tüm bölümler (hizmetler, ekip, galeri...) Aşama 3'te eklenecek.
+ * Tek sayfa, kaydırmalı: üst bölüm, hizmetler, ekip, galeri, yorumlar, iletişim (Bölüm 7.1).
  */
 import { notFound } from "next/navigation";
-import { getShopBySlug } from "@/lib/shops";
+import { ContactSection } from "@/components/site/contact-section";
+import { GallerySection } from "@/components/site/gallery-section";
+import { HeroSection } from "@/components/site/hero-section";
+import { MobileBookingBar } from "@/components/site/mobile-booking-bar";
+import { ServicesSection } from "@/components/site/services-section";
+import { TeamSection } from "@/components/site/team-section";
+import { TestimonialsSection } from "@/components/site/testimonials-section";
+import { getShopSiteData } from "@/lib/site-data";
+import { istanbulWeekday } from "@/lib/time";
 
 export default async function ShopHomePage({ params }: PageProps<"/sites/[slug]">) {
   const { slug } = await params;
-  const shop = await getShopBySlug(slug);
-  if (!shop) notFound();
+  const data = await getShopSiteData(slug);
+  if (!data) notFound();
+
+  const { shop } = data;
+  const todayWeekday = istanbulWeekday();
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-4 px-4 py-16">
-      <h1 className="text-3xl font-bold">{shop.name}</h1>
-      <p className="text-neutral-600">Dükkan sitesi yapım aşamasında.</p>
-      <p className="text-sm text-neutral-500">
-        Slug: <code>{shop.slug}</code>
-      </p>
+    // Mobilde alttaki sabit buton içeriği örtmesin diye alt boşluk
+    <main className="pb-24 md:pb-0">
+      <HeroSection
+        name={shop.name}
+        description={shop.description}
+        logoUrl={shop.logo_url}
+        coverImageUrl={shop.cover_image_url}
+        today={data.openingHours[todayWeekday]}
+      />
+      <ServicesSection services={data.services} />
+      <TeamSection barbers={data.barbers} />
+      <GallerySection images={data.gallery} />
+      <TestimonialsSection testimonials={data.testimonials} googleReviewsUrl={shop.google_reviews_url} />
+      <ContactSection shop={shop} openingHours={data.openingHours} todayWeekday={todayWeekday} />
+      <MobileBookingBar />
     </main>
   );
 }

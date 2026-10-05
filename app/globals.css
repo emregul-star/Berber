@@ -1,21 +1,43 @@
 @import "tailwindcss";
 
 /*
- * Temel renkler. Dükkan sitelerinin tema renkleri (Aşama 3) dükkanın kök elemanına
- * CSS değişkeni olarak basılacak ve bunları ezecek.
+ * Tema renkleri (Bölüm 9).
+ * Buradaki değerler varsayılandır ("modern" tema). Dükkan sitelerinde lib/themes.ts
+ * aynı değişkenleri dükkanın kök elemanında ezer; Tailwind sınıfları (bg-bg, text-text,
+ * bg-primary, text-on-primary ...) bu değişkenleri okuduğu için renkler otomatik değişir.
  */
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-bg: #ffffff;
+  --color-surface: #f4f4f5;
+  --color-text: #111111;
+  --color-muted: #52525b;
+  --color-border: #e4e4e7;
+  --color-primary: #111111;
+  --color-on-primary: #ffffff;
+  --color-primary-text: #111111;
+  --color-accent: #3f3f46;
+  --color-on-accent: #ffffff;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
+  /* Başlık yazı tipi: temaya göre serif veya sans (lib/themes.ts --heading-font değişkenini ayarlar) */
+  --font-heading: var(--heading-font, var(--font-geist-sans));
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Sayfa içi bağlantılara (#hizmetler) yumuşak kaydırma; sabit üst menünün altında kalmasın */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 4.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }

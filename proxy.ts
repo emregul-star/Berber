@@ -37,11 +37,16 @@ export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   let tenant: TenantRoute = resolveTenant(request.headers.get("host") ?? "", PLATFORM_DOMAIN);
 
-  // --- Geliştirme kolaylığı: localhost:3000/?shop=demo ---
+  // --- Geliştirme/önizleme kolaylığı: localhost:3000/?shop=demo ---
   // Seçilen dükkan bir çerezde hatırlanır ki sitedeki linkler de çalışsın.
-  // "?shop=" (boş) çerezi siler ve platform sayfasına döner. Yayında devre dışıdır.
+  // "?shop=" (boş) çerezi siler ve platform sayfasına döner.
+  // Sadece yerel geliştirmede ve Vercel önizleme (preview) adreslerinde açıktır;
+  // önizleme adreslerinde alt alan adı olmadığı için dükkanı görmenin tek yolu budur.
+  // Canlı yayında (production) devre dışıdır.
+  const allowShopParam =
+    process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "preview";
   let devShopCookie: string | null | undefined; // undefined = çereze dokunma
-  if (process.env.NODE_ENV === "development" && tenant.kind === "platform") {
+  if (allowShopParam && tenant.kind === "platform") {
     const param = searchParams.get("shop");
     const selected =
       param !== null ? param.trim().toLowerCase() : request.cookies.get(DEV_SHOP_COOKIE)?.value;
