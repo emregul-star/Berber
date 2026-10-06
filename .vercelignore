@@ -1,0 +1,8 @@
+# Vercel CLI ile yüklemede gönderilmeyecek dosyalar (gizli anahtarlar asla yüklenmez)
+.env
+.env.local
+.env.*.local
+.vercel
+node_modules
+.next
+scripts/_tmp*
