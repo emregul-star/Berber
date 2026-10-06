@@ -6,6 +6,7 @@
  * E-posta istemcileri CSS sınıflarını desteklemediği için stiller satır içidir.
  */
 import { formatPrice } from "../../format";
+import { withPath } from "../../links";
 import { formatTrPhone } from "../../phone";
 import type { AppointmentNotificationData, CancelledBy } from "../types";
 
@@ -154,8 +155,8 @@ export function customerCancelledEmail(d: AppointmentNotificationData, by: Cance
       : "Yeni bir randevu için sitemizi ziyaret edebilirsiniz.";
   return {
     subject: `${title} — ${d.whenLabel}`,
-    html: layout({ d, title, intro, rows, button: { label: "Yeni randevu al", url: `${d.shop.baseUrl}/randevu-al` }, footerNote: footer }),
-    text: plainText(title, intro, rows, [footer, `${d.shop.baseUrl}/randevu-al`]),
+    html: layout({ d, title, intro, rows, button: { label: "Yeni randevu al", url: withPath(d.shop.baseUrl, "/randevu-al") }, footerNote: footer }),
+    text: plainText(title, intro, rows, [footer, withPath(d.shop.baseUrl, "/randevu-al")]),
   };
 }
 
@@ -179,7 +180,7 @@ export function shopCreatedEmail(d: AppointmentNotificationData): EmailContent {
     ? "Sitenizden yeni bir randevu talebi geldi. Onaylamak için panelinize girin."
     : "Sitenizden yeni bir randevu alındı.";
   const rows = [...detailRows(d), ...customerRows(d)];
-  const panelUrl = `${d.shop.baseUrl}/panel`;
+  const panelUrl = withPath(d.shop.baseUrl, "/panel");
   return {
     subject: `${title}: ${d.customer.name} — ${d.whenLabel}`,
     html: layout({ d, title, intro, rows, button: { label: "Panele git", url: panelUrl } }),

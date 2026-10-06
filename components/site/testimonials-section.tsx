@@ -5,7 +5,7 @@ import { SectionHeading } from "./ui";
 
 function Stars({ rating }: { rating: number }) {
   return (
-    <p className="flex gap-0.5 text-primary-text" aria-label={`5 üzerinden ${rating} yıldız`}>
+    <p className="flex gap-0.5 text-primary-text" role="img" aria-label={`5 üzerinden ${rating} yıldız`}>
       {Array.from({ length: 5 }, (_, i) => (
         <StarIcon key={i} filled={i < rating} />
       ))}

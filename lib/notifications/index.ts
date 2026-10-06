@@ -9,7 +9,7 @@
 import "server-only";
 import { after } from "next/server";
 import { formatWhen } from "../time";
-import { shopBaseUrl } from "../links";
+import { shopBaseUrl, withPath } from "../links";
 import { createAdminClient } from "../supabase/admin";
 import { resolveTheme } from "../themes";
 import { EmailProvider } from "./email/provider";
@@ -107,7 +107,7 @@ async function loadNotificationData(event: AppointmentEvent): Promise<Appointmen
       isDemo: data.shops.is_demo,
       baseUrl,
     },
-    manageUrl: token ? `${baseUrl}/randevu/${token}` : undefined,
+    manageUrl: token ? withPath(baseUrl, `/randevu/${token}`) : undefined,
     previousWhenLabel: event.type === "rescheduled" ? formatWhen(new Date(event.previousStartsAt)) : undefined,
     cancelReason: data.cancel_reason,
   };

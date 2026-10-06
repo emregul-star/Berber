@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { BookingConfirmation } from "@/lib/booking";
+import { SINGLE_DOMAIN_MODE } from "@/lib/constants";
 import { formatPrice } from "@/lib/format";
 import { buildIcs } from "@/lib/ics";
 import { whatsappLink, whatsappTemplates } from "@/lib/whatsapp";
@@ -14,12 +15,17 @@ import { CalendarIcon, WhatsAppIcon } from "../icons";
 export function ConfirmationStep({
   confirmation,
   customerName,
+  shopSlug,
 }: {
   confirmation: BookingConfirmation;
   customerName: string;
+  shopSlug: string;
 }) {
   const [copied, setCopied] = useState(false);
-  const manageUrl = `${window.location.origin}/randevu/${confirmation.manageToken}`;
+  // Tek adres modunda dükkan alt alan adıyla değil ?shop= ile seçilir; link başka cihazda da açılsın diye eklenir
+  const manageUrl =
+    `${window.location.origin}/randevu/${confirmation.manageToken}` +
+    (SINGLE_DOMAIN_MODE ? `?shop=${encodeURIComponent(shopSlug)}` : "");
   const isPending = confirmation.status === "pending";
 
   function downloadIcs() {

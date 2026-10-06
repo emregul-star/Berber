@@ -12,6 +12,18 @@ import "server-only";
 import { findAuthUserIdByEmail } from "./auth-users";
 import { createAdminClient } from "./supabase/admin";
 
+export type DemoRole = "owner" | "barber";
+
+/**
+ * Herkese açık "Demoyu dene" girişi için hesap bilgileri. Şifreler sadece sunucuda okunur,
+ * sayfaya hiç yazılmaz. İkisi de tanımlı değilse demo girişi butonları gösterilmez.
+ */
+export function demoCredentials(role: DemoRole): { email: string; password: string } | null {
+  const email = role === "owner" ? process.env.DEMO_OWNER_EMAIL : process.env.DEMO_BARBER_EMAIL;
+  const password = role === "owner" ? process.env.DEMO_OWNER_PASSWORD : process.env.DEMO_BARBER_PASSWORD;
+  return email && password ? { email, password } : null;
+}
+
 const ASSET_FOLDERS = ["gallery", "barbers", "logo", "cover"];
 
 export async function resetDemoShop(): Promise<{ linkedAccounts: string[] }> {

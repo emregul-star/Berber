@@ -682,9 +682,18 @@ Her aşama sonunda kabul kriterleri kontrol edilecek.
 - Türkçe README
 - **Kabul:** Bölüm 17'deki test listesinin tamamı geçiyor.
 
+**Uygulama notları (Aşama 10):**
+- **Ücretsiz yayın kararı (2026-10-07):** Proje şimdilik portföy projesi; maliyet olmayacak. Alan adı alınmadı, Vercel Hobby + Supabase Free kullanılır. `*.vercel.app` adresinde alt alan adı açılamadığı için **tek adres modu** eklendi (`NEXT_PUBLIC_SINGLE_DOMAIN_MODE=true`): dükkanlar `?shop=slug` ile seçilir (seçim çerezde hatırlanır), süper yönetici paneli `/admin` yolundadır. Tüm linkler (`lib/links.ts`: `shopBaseUrl`, `shopUrl`, `withPath`, `adminPath`) iki moda göre üretilir; e-postalardaki ve onay ekranındaki randevu yönetim linkleri tek adres modunda `?shop=` içerir. Alan adı alınınca mod kapatılır, kod değişmez.
+- **Herkese açık demo:** Demo panel giriş sayfasında "Dükkan sahibi / Berber olarak dene" butonları vardır (şifreler sunucudaki ortam değişkenlerinde, sayfada gösterilmez). Demo dükkanda giriş hesapları ve şifreler değiştirilemez. Vercel Cron her gece demo dükkanı sıfırlar (`/api/cron/demo-reset`, `CRON_SECRET` ile korunur); bu düzenli istek Supabase ücretsiz projesinin duraklatılmasını da önler. Demo verisine "bugünün" randevuları eklendi (panelin ilk ekranı boş görünmesin).
+- **SEO:** Dükkan sayfalarında dükkan adına göre başlık şablonu, açıklama, Open Graph/Twitter kartı; paylaşım görseli `/api/og/{slug}` (dükkan temasıyla, `next/og`). Platform sayfasının görseli derlemede üretilir. `robots.txt` panelleri, kişiye özel randevu sayfalarını ve cron uç noktasını kapatır.
+- **Erişilebilirlik:** axe-core ile WCAG 2.1 AA taraması (tanıtım, dükkan sitesi, randevu sihirbazı adımları, KVKK, giriş sayfaları, 13 panel sayfası): bulunan kontrast ve ARIA sorunları düzeltildi, sonuç temiz. Tanıtım sayfasında "İçeriğe geç" linki var.
+- **Tanıtım sayfası:** Özellikler, ekran görüntüleri (`public/landing/`, demo dükkandan alındı), nasıl çalışır, demo linkleri; `NEXT_PUBLIC_PLATFORM_SUPPORT_WHATSAPP` tanımlıysa WhatsApp iletişim butonu.
+
 ---
 
 ## 16. Yayına Alma Rehberi (README'ye de eklenecek)
+
+> **Not (Aşama 10):** Şu anki yayın alan adı olmadan, ücretsiz yapılır (README → "Ücretsiz yayına alma"). Aşağıdaki adımlar alan adı alındığında geçerlidir; 5. adım ücretlidir. Cron, Vercel Cron yerine veritabanı bakımı için `pg_cron`, demo sıfırlama için `vercel.json` ile kuruldu.
 
 1. Supabase'de yeni proje oluştur, migration'ları çalıştır, seed'i yükle.
 2. Supabase Auth ayarlarında site adresini ve yönlendirme adreslerini (`https://*.PLATFORM_DOMAIN/**`) tanımla.

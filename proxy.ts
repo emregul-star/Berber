@@ -6,14 +6,14 @@
  * 2. İsteği dahili olarak doğru klasöre yeniden yazar (rewrite). Adres çubuğu değişmez:
  *      demo.PLATFORM_DOMAIN/randevu-al  ->  app/sites/demo/randevu-al
  *      admin.PLATFORM_DOMAIN/dukkanlar  ->  app/admin/dukkanlar
- * 3. /sites ve /admin yollarına dışarıdan doğrudan erişimi engeller.
+ * 3. /sites ve /admin yollarına dışarıdan doğrudan erişimi engeller (tek adres modunda /admin açıktır).
  * 4. Panel kullanıcılarının Supabase oturumunu yeniler.
  *
  * Not: Proxy bir güvenlik sınırı DEĞİLDİR. Yetki kontrolleri her sayfada ve her
  * Server Action'da ayrıca yapılmalıdır.
  */
 import { NextResponse, type NextRequest } from "next/server";
-import { DEV_SHOP_COOKIE, PLATFORM_DOMAIN } from "@/lib/constants";
+import { PLATFORM_DOMAIN, SELECTED_SHOP_COOKIE, SHOP_PARAM_ALLOWED, SINGLE_DOMAIN_MODE } from "@/lib/constants";
 import { findSlugByCustomDomain } from "@/lib/custom-domain";
 import { updateSession } from "@/lib/supabase/proxy";
 import { isValidSlug, resolveTenant, type TenantRoute } from "@/lib/tenant";
@@ -22,8 +22,10 @@ import { isValidSlug, resolveTenant, type TenantRoute } from "@/lib/tenant";
 const SHOP_ROUTE_PREFIX = "/sites";
 /** Süper yönetici panelinin dahili klasörü: app/admin */
 const ADMIN_ROUTE_PREFIX = "/admin";
-/** Hiçbir kiracıya ait olmayan genel uç noktalar (cron, .ics vb.) */
+/** Hiçbir kiracıya ait olmayan genel uç noktalar (cron, OG görselleri vb.) */
 const API_ROUTE_PREFIX = "/api";
+/** Her host için aynı olan dosyalar: yeniden yazılmadan olduğu gibi sunulur */
+const SHARED_PATHS = new Set(["/robots.txt"]);
 /** Geçersiz slug: dükkan sorgusu bulamaz ve "Dükkan bulunamadı" sayfası gösterilir. */
 const UNKNOWN_SHOP_SLUG = "_";
 /** Var olmayan bir yol: Next.js genel 404 sayfasını gösterir. */
@@ -37,20 +39,20 @@ export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   let tenant: TenantRoute = resolveTenant(request.headers.get("host") ?? "", PLATFORM_DOMAIN);
 
-  // --- Geliştirme/önizleme kolaylığı: localhost:3000/?shop=demo ---
+  // Tek adres modunda süper yönetici paneli PLATFORM_DOMAIN/admin adresindedir (dahili klasörle aynı yol).
+  const adminByPath = SINGLE_DOMAIN_MODE && tenant.kind === "platform" && isUnder(pathname, ADMIN_ROUTE_PREFIX);
+
+  // --- Alt alan adı olmadan dükkan seçimi: PLATFORM_DOMAIN/?shop=demo ---
   // Seçilen dükkan bir çerezde hatırlanır ki sitedeki linkler de çalışsın.
   // "?shop=" (boş) çerezi siler ve platform sayfasına döner.
-  // Sadece yerel geliştirmede ve Vercel önizleme (preview) adreslerinde açıktır;
-  // önizleme adreslerinde alt alan adı olmadığı için dükkanı görmenin tek yolu budur.
-  // Canlı yayında (production) devre dışıdır.
-  const allowShopParam =
-    process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "preview";
-  let devShopCookie: string | null | undefined; // undefined = çereze dokunma
-  if (allowShopParam && tenant.kind === "platform") {
+  // Tek adres modunda (ücretsiz *.vercel.app yayını), yerel geliştirmede ve Vercel önizleme
+  // adreslerinde açıktır; alan adıyla yayında (alt alan adları çalışırken) kapalıdır.
+  let shopCookie: string | null | undefined; // undefined = çereze dokunma
+  if (SHOP_PARAM_ALLOWED && tenant.kind === "platform" && !adminByPath) {
     const param = searchParams.get("shop");
     const selected =
-      param !== null ? param.trim().toLowerCase() : request.cookies.get(DEV_SHOP_COOKIE)?.value;
-    if (param !== null) devShopCookie = selected || null;
+      param !== null ? param.trim().toLowerCase() : request.cookies.get(SELECTED_SHOP_COOKIE)?.value;
+    if (param !== null) shopCookie = selected || null;
     if (selected) tenant = { kind: "shop", slug: selected };
   }
 
@@ -63,7 +65,7 @@ export async function proxy(request: NextRequest) {
   // İsteğin dahili olarak gideceği yol; null ise olduğu gibi bırakılır.
   const rest = pathname === "/" ? "" : pathname;
   let target: string | null = null;
-  if (isUnder(pathname, API_ROUTE_PREFIX)) {
+  if (isUnder(pathname, API_ROUTE_PREFIX) || SHARED_PATHS.has(pathname) || adminByPath) {
     target = null;
   } else if (tenant.kind === "shop") {
     // Slug doğrulaması "../" gibi hilelerle başka klasörlere sıçramayı da engeller.
@@ -85,10 +87,15 @@ export async function proxy(request: NextRequest) {
 
   const response = await updateSession(request, createResponse);
 
-  if (devShopCookie) {
-    response.cookies.set(DEV_SHOP_COOKIE, devShopCookie, { path: "/", httpOnly: true, sameSite: "lax" });
-  } else if (devShopCookie === null) {
-    response.cookies.delete(DEV_SHOP_COOKIE);
+  if (shopCookie) {
+    response.cookies.set(SELECTED_SHOP_COOKIE, shopCookie, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: request.nextUrl.protocol === "https:",
+    });
+  } else if (shopCookie === null) {
+    response.cookies.delete(SELECTED_SHOP_COOKIE);
   }
 
   return response;

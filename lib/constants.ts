@@ -89,5 +89,21 @@ export const DEFAULT_SERVICES = [
   { name: "Çocuk Tıraşı", duration: 20, price: 250 },
 ] as const;
 
-/** Geliştirme modunda ?shop=slug ile seçilen dükkanın hatırlandığı çerez. */
-export const DEV_SHOP_COOKIE = "dev_shop";
+/**
+ * Tek adres modu (alan adı olmadan, ör. ücretsiz proje.vercel.app adresinde yayın).
+ * *.vercel.app adreslerinde alt alan adı (demo.proje.vercel.app) açılamadığı için:
+ * - Dükkan sitesi ve paneli: proje.vercel.app/?shop=demo (seçim çerezde hatırlanır)
+ * - Süper yönetici paneli: proje.vercel.app/admin
+ * Alan adı alınıp *.alanadi.com Vercel'e bağlanınca kapatılır (false).
+ */
+export const SINGLE_DOMAIN_MODE = process.env.NEXT_PUBLIC_SINGLE_DOMAIN_MODE === "true";
+
+/**
+ * ?shop=slug ile dükkan seçmeye izin var mı? Tek adres modunda, yerel geliştirmede ve
+ * Vercel önizleme adreslerinde açıktır.
+ */
+export const SHOP_PARAM_ALLOWED =
+  SINGLE_DOMAIN_MODE || process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "preview";
+
+/** ?shop=slug ile seçilen dükkanın hatırlandığı çerez. */
+export const SELECTED_SHOP_COOKIE = "selected_shop";

@@ -14,7 +14,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { findAuthUserIdByEmail } from "@/lib/auth-users";
 import { isOwnAssetUrl } from "@/lib/panel/assets";
-import { requireOwner, type PanelUser } from "@/lib/panel/auth";
+import { DEMO_ACCOUNT_LOCKED_MESSAGE, requireOwner, type PanelUser } from "@/lib/panel/auth";
 import { generateTempPassword } from "@/lib/panel/passwords";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -114,6 +114,7 @@ async function isResettableBarberAccount(shopId: string, userId: string): Promis
 /** Berbere giriş hesabı açar (veya mevcut hesabı bağlar). Yeni hesapta geçici şifre döner. */
 export async function createBarberAccountAction(slug: string, barberId: string, emailInput: string): Promise<Result> {
   const user = await requireOwner(slug);
+  if (user.shop.isDemo) return { ok: false, error: DEMO_ACCOUNT_LOCKED_MESSAGE };
   const email = z.email().safeParse(String(emailInput).trim().toLowerCase());
   if (!email.success) return { ok: false, error: "Geçerli bir e-posta adresi yazın." };
   const barber = await loadOwnBarber(user, barberId);
@@ -155,6 +156,7 @@ export async function createBarberAccountAction(slug: string, barberId: string, 
 /** Berber hesabına yeni geçici şifre verir ("şifremi unuttum" için ücretsiz yol) */
 export async function resetBarberPasswordAction(slug: string, barberId: string): Promise<Result> {
   const user = await requireOwner(slug);
+  if (user.shop.isDemo) return { ok: false, error: DEMO_ACCOUNT_LOCKED_MESSAGE };
   const barber = await loadOwnBarber(user, barberId);
   if (!barber?.user_id) return { ok: false, error: "Bu berberin giriş hesabı yok." };
   if (!(await isResettableBarberAccount(user.shop.id, barber.user_id))) {
@@ -169,6 +171,7 @@ export async function resetBarberPasswordAction(slug: string, barberId: string):
 /** Berberin giriş hesabını bu dükkandan kaldırır (berber kaydı kalır) */
 export async function removeBarberAccountAction(slug: string, barberId: string): Promise<Result> {
   const user = await requireOwner(slug);
+  if (user.shop.isDemo) return { ok: false, error: DEMO_ACCOUNT_LOCKED_MESSAGE };
   const barber = await loadOwnBarber(user, barberId);
   if (!barber?.user_id) return { ok: false, error: "Bu berberin giriş hesabı yok." };
   if (barber.user_id === user.userId) return { ok: false, error: "Kendi hesabınızı buradan kaldıramazsınız." };

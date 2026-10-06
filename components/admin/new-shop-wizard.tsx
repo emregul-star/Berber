@@ -7,7 +7,8 @@
 import { useState, useTransition } from "react";
 import { checkSlugAction, createShopAction } from "@/app/admin/(app)/actions";
 import { Button, Card, Field, inputClass, Notice } from "@/components/panel/ui";
-import { DEFAULT_SERVICES, PLATFORM_DOMAIN } from "@/lib/constants";
+import { DEFAULT_SERVICES } from "@/lib/constants";
+import { adminPath, shopBaseUrl, withPath } from "@/lib/links";
 import { slugify } from "@/lib/slug";
 import { THEME_PRESETS, type ThemePresetName } from "@/lib/themes";
 
@@ -34,7 +35,7 @@ export function NewShopWizard() {
   const [created, setCreated] = useState<Created | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const hostFor = (s: string) => `${s || "adres"}.${PLATFORM_DOMAIN}`;
+  const hostFor = (s: string) => shopBaseUrl(s || "adres").replace(/^https?:\/\//, "");
 
   function checkSlug(value = slug) {
     startTransition(async () => setSlugStatus(await checkSlugAction(value)));
@@ -74,7 +75,8 @@ export function NewShopWizard() {
   }
 
   if (created) {
-    const base = `${PLATFORM_DOMAIN.startsWith("localhost") ? "http" : "https"}://${created.slug}.${PLATFORM_DOMAIN}`;
+    const base = shopBaseUrl(created.slug);
+    const panel = withPath(base, "/panel");
     return (
       <Card>
         <Notice tone="success">{created.message}</Notice>
@@ -85,7 +87,7 @@ export function NewShopWizard() {
           </div>
           <div className="flex flex-wrap justify-between gap-2">
             <dt className="text-neutral-500">Panel</dt>
-            <dd><a href={`${base}/panel`} target="_blank" rel="noopener noreferrer" className="underline">{base}/panel</a></dd>
+            <dd><a href={panel} target="_blank" rel="noopener noreferrer" className="underline">{panel}</a></dd>
           </div>
           <div className="flex flex-wrap justify-between gap-2">
             <dt className="text-neutral-500">Sahip e-postası</dt>
@@ -101,7 +103,7 @@ export function NewShopWizard() {
           <p className="mt-4 text-sm text-neutral-600">Bu e-postayla zaten bir hesap vardı; sahip mevcut şifresiyle giriş yapar.</p>
         )}
         <div className="mt-4 flex flex-wrap gap-2">
-          <a href={`/dukkanlar/${created.shopId}`} className="rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white">
+          <a href={adminPath(`/dukkanlar/${created.shopId}`)} className="rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white">
             Dükkan ayrıntılarına git
           </a>
         </div>

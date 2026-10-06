@@ -7,19 +7,20 @@ import { buttonClass } from "@/components/panel/ui";
 import { requireAdmin } from "@/lib/admin/auth";
 import { countSuspensionCandidates } from "@/lib/admin/data";
 import { PLATFORM_NAME } from "@/lib/constants";
+import { adminPath } from "@/lib/links";
 import { adminLogoutAction } from "../auth-actions";
 
-export const metadata: Metadata = { title: `${PLATFORM_NAME} — Yönetim`, robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Yönetim", robots: { index: false, follow: false } };
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const admin = await requireAdmin();
   const warnings = await countSuspensionCandidates();
 
   const items: NavItem[] = [
-    { href: "/", label: "Pano", badge: warnings },
-    { href: "/dukkanlar", label: "Dükkanlar" },
-    { href: "/dukkanlar/yeni", label: "Yeni dükkan" },
-    { href: "/ayarlar", label: "Platform ayarları" },
+    { href: adminPath("/"), label: "Pano", badge: warnings },
+    { href: adminPath("/dukkanlar"), label: "Dükkanlar" },
+    { href: adminPath("/dukkanlar/yeni"), label: "Yeni dükkan" },
+    { href: adminPath("/ayarlar"), label: "Platform ayarları" },
   ];
 
   const footer = (

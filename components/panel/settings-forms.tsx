@@ -121,7 +121,7 @@ export function ImagesForm({ slug, shopId, logoUrl, coverUrl }: { slug: string; 
         {url ? (
           <Image src={url} alt="" fill sizes="400px" className="object-cover" />
         ) : (
-          <span className="absolute inset-0 flex items-center justify-center text-xs text-neutral-500">Yok</span>
+          <span className="absolute inset-0 flex items-center justify-center text-xs text-neutral-600">Yok</span>
         )}
       </div>
       <div className="flex flex-wrap gap-2">

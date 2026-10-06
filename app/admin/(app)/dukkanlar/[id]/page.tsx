@@ -13,7 +13,7 @@ import { getShopDetail, today } from "@/lib/admin/data";
 import { daysOverdue, nextPeriod } from "@/lib/billing";
 import { TIME_ZONE } from "@/lib/constants";
 import { formatPrice } from "@/lib/format";
-import { shopBaseUrl } from "@/lib/links";
+import { adminPath, shopBaseUrl, withPath } from "@/lib/links";
 
 export default async function ShopDetailPage({ params }: PageProps<"/admin/dukkanlar/[id]">) {
   await requireAdmin();
@@ -31,7 +31,7 @@ export default async function ShopDetailPage({ params }: PageProps<"/admin/dukka
         title={shop.name}
         description={`${shop.slug} · ${formatInTimeZone(new Date(shop.created_at), TIME_ZONE, "d MMMM yyyy", { locale: tr })} tarihinde açıldı`}
         actions={
-          <ButtonLink href="/dukkanlar" variant="secondary" size="sm">
+          <ButtonLink href={adminPath("/dukkanlar")} variant="secondary" size="sm">
             ← Dükkanlar
           </ButtonLink>
         }
@@ -104,7 +104,7 @@ export default async function ShopDetailPage({ params }: PageProps<"/admin/dukka
               <a href={base} target="_blank" rel="noopener noreferrer" className="underline">
                 Siteyi aç ↗
               </a>
-              <a href={`${base}/panel`} target="_blank" rel="noopener noreferrer" className="underline">
+              <a href={withPath(base, "/panel")} target="_blank" rel="noopener noreferrer" className="underline">
                 Paneli aç ↗
               </a>
             </div>

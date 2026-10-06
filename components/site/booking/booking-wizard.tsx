@@ -168,7 +168,7 @@ export function BookingWizard({
   }
 
   if (step === 5 && confirmation) {
-    return <ConfirmationStep confirmation={confirmation} customerName={customer?.customerName ?? ""} />;
+    return <ConfirmationStep confirmation={confirmation} customerName={customer?.customerName ?? ""} shopSlug={shop.slug} />;
   }
 
   return (

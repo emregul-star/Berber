@@ -12,14 +12,19 @@ export type NavItem = { href: string; label: string; badge?: number };
 
 function NavLinks({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void }) {
   const pathname = usePathname();
-  // Proxy adresi yeniden yazdığı için pathname "/sites/{slug}/panel/..." veya "/admin/..." olabilir
-  const current = pathname.replace(/^\/sites\/[^/]+/, "").replace(/^\/admin(?=\/|$)/, "") || "/";
+  // Proxy adresi yeniden yazdığı için pathname "/sites/{slug}/panel/..." veya "/admin/..." olabilir;
+  // tek adres modunda linklerin kendisi de "/admin/..." ile başlar. İkisi de aynı biçime getirilir.
+  const normalize = (p: string) => p.replace(/^\/sites\/[^/]+/, "").replace(/^\/admin(?=\/|$)/, "") || "/";
+  const current = normalize(pathname);
   // Aktif öğe: adresle eşleşen EN UZUN link (ör. /dukkanlar/yeni'de "Yeni dükkan", "Dükkanlar" değil).
   // Ana sayfa linkleri ("/" ve "/panel") sadece tam eşleşmede aktif olur.
   const isRoot = (href: string) => href === "/" || href === "/panel";
   const activeHref = items
     .map((i) => i.href)
-    .filter((href) => current === href || (!isRoot(href) && current.startsWith(`${href}/`)))
+    .filter((href) => {
+      const h = normalize(href);
+      return current === h || (!isRoot(h) && current.startsWith(`${h}/`));
+    })
     .sort((a, b) => b.length - a.length)[0];
   return (
     <ul className="grid gap-0.5">

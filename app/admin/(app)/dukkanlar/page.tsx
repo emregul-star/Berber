@@ -7,7 +7,7 @@ import { Badge, ButtonLink, EmptyState, PageHeader } from "@/components/panel/ui
 import { requireAdmin } from "@/lib/admin/auth";
 import { listShops } from "@/lib/admin/data";
 import { formatPrice } from "@/lib/format";
-import { shopBaseUrl } from "@/lib/links";
+import { adminPath, shopBaseUrl, withPath } from "@/lib/links";
 
 type Tone = "neutral" | "green" | "amber" | "red" | "blue";
 const SHOP_STATUS: Record<string, [string, Tone]> = { active: ["Aktif", "green"], suspended: ["Askıda", "red"], demo: ["Demo", "blue"] };
@@ -24,7 +24,7 @@ export default async function ShopsPage() {
 
   return (
     <>
-      <PageHeader title="Dükkanlar" description={`${shops.length} dükkan`} actions={<ButtonLink href="/dukkanlar/yeni">+ Yeni dükkan</ButtonLink>} />
+      <PageHeader title="Dükkanlar" description={`${shops.length} dükkan`} actions={<ButtonLink href={adminPath("/dukkanlar/yeni")}>+ Yeni dükkan</ButtonLink>} />
       {shops.length === 0 ? (
         <EmptyState>Henüz dükkan yok.</EmptyState>
       ) : (
@@ -38,7 +38,7 @@ export default async function ShopsPage() {
               <li key={s.id} className="rounded-lg border border-neutral-200 bg-white p-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <Link prefetch={false} href={`/dukkanlar/${s.id}`} className="font-semibold hover:underline">
+                    <Link prefetch={false} href={adminPath(`/dukkanlar/${s.id}`)} className="font-semibold hover:underline">
                       {s.name}
                     </Link>
                     <p className="text-sm text-neutral-600">
@@ -55,10 +55,10 @@ export default async function ShopsPage() {
                   <a href={base} target="_blank" rel="noopener noreferrer" className="text-neutral-600 underline hover:text-neutral-900">
                     Siteyi aç ↗
                   </a>
-                  <a href={`${base}/panel`} target="_blank" rel="noopener noreferrer" className="text-neutral-600 underline hover:text-neutral-900">
+                  <a href={withPath(base, "/panel")} target="_blank" rel="noopener noreferrer" className="text-neutral-600 underline hover:text-neutral-900">
                     Paneli aç ↗
                   </a>
-                  <Link prefetch={false} href={`/dukkanlar/${s.id}`} className="text-neutral-600 underline hover:text-neutral-900">
+                  <Link prefetch={false} href={adminPath(`/dukkanlar/${s.id}`)} className="text-neutral-600 underline hover:text-neutral-900">
                     Ayrıntılar
                   </Link>
                 </div>

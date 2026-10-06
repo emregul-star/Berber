@@ -7,8 +7,10 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { AUTH_EMAILS_ENABLED, LOGIN_LIMITS } from "@/lib/constants";
-import { getPanelUser, LOGIN_PATH, requirePanelUser } from "@/lib/panel/auth";
+import { DEMO_ACCOUNT_LOCKED_MESSAGE, getPanelUser, LOGIN_PATH, requirePanelUser } from "@/lib/panel/auth";
+import { demoCredentials, type DemoRole } from "@/lib/demo";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { getShopBySlug } from "@/lib/shops";
 import { createClient } from "@/lib/supabase/server";
 
 export type FormState = { error?: string; success?: string; redirectTo?: string } | undefined;
@@ -44,6 +46,29 @@ export async function loginAction(slug: string, _prev: FormState, formData: Form
   redirect("/panel");
 }
 
+/**
+ * Demo dükkanda tek tıkla giriş (portföy ziyaretçileri için). Sadece is_demo dükkanda çalışır;
+ * hesap bilgileri sunucudaki ortam değişkenlerinden okunur.
+ */
+export async function demoLoginAction(slug: string, role: DemoRole): Promise<FormState> {
+  const shop = await getShopBySlug(slug);
+  const credentials = demoCredentials(role);
+  if (!shop?.isDemo || !credentials) return { error: "Demo girişi kullanılamıyor." };
+
+  const ip = await getClientIp();
+  if (!(await checkRateLimit(`login:ip:${ip}`, LOGIN_LIMITS.perIp.max, LOGIN_LIMITS.perIp.windowSeconds))) {
+    return { error: "Çok fazla deneme yaptınız. Lütfen birkaç dakika sonra tekrar deneyin." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword(credentials);
+  if (error || !(await getPanelUser(slug))) {
+    await supabase.auth.signOut();
+    return { error: "Demo hesabı şu anda hazır değil. Lütfen daha sonra tekrar deneyin." };
+  }
+  return { redirectTo: "/panel" };
+}
+
 export async function logoutAction(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
@@ -59,7 +84,8 @@ const passwordSchema = z
 
 /** Giriş yapmış kullanıcının kendi şifresini değiştirmesi (e-posta gerekmez) */
 export async function changePasswordAction(slug: string, _prev: FormState, formData: FormData): Promise<FormState> {
-  await requirePanelUser(slug);
+  const user = await requirePanelUser(slug);
+  if (user.shop.isDemo) return { error: DEMO_ACCOUNT_LOCKED_MESSAGE };
   const parsed = passwordSchema.safeParse({ password: formData.get("password"), confirm: formData.get("confirm") });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 

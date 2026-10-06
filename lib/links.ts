@@ -2,7 +2,7 @@
  * Dükkan sahibinin girdiği linkleri güvenli şekilde kullanmak için yardımcılar.
  * Sahip panelden link girebildiği için bunları körü körüne sayfaya koymuyoruz.
  */
-import { PLATFORM_DOMAIN } from "./constants";
+import { PLATFORM_DOMAIN, SINGLE_DOMAIN_MODE } from "./constants";
 
 /** "0216 555 00 00" -> "tel:02165550000" */
 export function telHref(phone: string): string {
@@ -39,16 +39,50 @@ export function safeGoogleMapsEmbedUrl(url: string | null | undefined): string |
 
 const isLocalPlatform = () => PLATFORM_DOMAIN.startsWith("localhost");
 
-/** Platformun ana sayfası (ör. https://berberplatform.com, yerelde http://localhost:3000) */
+/** Platformun kök adresi, ör. https://berberplatform.com (metadataBase vb. için) */
+export const platformOrigin = () => `${isLocalPlatform() ? "http" : "https"}://${PLATFORM_DOMAIN}`;
+
+/**
+ * Platformun ana sayfası (ör. https://berberplatform.com, yerelde http://localhost:3000).
+ * Tek adres modunda "?shop=" eklenir: seçili dükkan çerezi silinsin, tanıtım sayfası açılsın.
+ */
 export function platformHomeUrl(): string {
-  return `${isLocalPlatform() ? "http" : "https"}://${PLATFORM_DOMAIN}`;
+  return SINGLE_DOMAIN_MODE ? `${platformOrigin()}/?shop=` : platformOrigin();
 }
 
 /**
- * Dükkan sitesinin tam adresi (e-postalardaki linkler için).
- * Kendi alan adı varsa o kullanılır: https://kralberber.com, yoksa https://{slug}.PLATFORM_DOMAIN
+ * Dükkan sitesinin tam adresi (e-postalardaki ve yönetici panelindeki linkler için).
+ * Kendi alan adı varsa o kullanılır: https://kralberber.com, yoksa https://{slug}.PLATFORM_DOMAIN.
+ * Tek adres modunda: https://PLATFORM_DOMAIN/?shop={slug}
+ * Alt sayfa linki için shopUrl() veya withPath() kullanın (sona "/yol" eklemeyin).
  */
 export function shopBaseUrl(slug: string, customDomain?: string | null): string {
   if (customDomain) return `https://${customDomain}`;
+  if (SINGLE_DOMAIN_MODE) return `${platformOrigin()}/?shop=${encodeURIComponent(slug)}`;
   return `${isLocalPlatform() ? "http" : "https"}://${slug}.${PLATFORM_DOMAIN}`;
+}
+
+/**
+ * Bir adresin yolunu değiştirir, sorgu kısmını korur:
+ *   withPath("https://x.com", "/panel")             -> "https://x.com/panel"
+ *   withPath("https://x.com/?shop=demo", "/panel")  -> "https://x.com/panel?shop=demo"
+ */
+export function withPath(baseUrl: string, path: string): string {
+  const url = new URL(baseUrl);
+  url.pathname = path;
+  return url.toString();
+}
+
+/** Dükkan sitesindeki bir sayfanın tam adresi, ör. shopUrl("demo", "/randevu-al") */
+export function shopUrl(slug: string, path: string, customDomain?: string | null): string {
+  return withPath(shopBaseUrl(slug, customDomain), path);
+}
+
+/**
+ * Süper yönetici panelindeki bir sayfanın uygulama içi yolu.
+ * Alt alan adında (admin.PLATFORM_DOMAIN) "/dukkanlar", tek adres modunda "/admin/dukkanlar".
+ */
+export function adminPath(path: string): string {
+  if (!SINGLE_DOMAIN_MODE) return path;
+  return path === "/" ? "/admin" : `/admin${path}`;
 }

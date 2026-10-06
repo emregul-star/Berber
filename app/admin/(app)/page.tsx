@@ -11,6 +11,7 @@ import { requireAdmin } from "@/lib/admin/auth";
 import { listShops, paymentsThisMonth } from "@/lib/admin/data";
 import { SUSPEND_SUGGEST_AFTER_DAYS, TIME_ZONE } from "@/lib/constants";
 import { formatPrice } from "@/lib/format";
+import { adminPath } from "@/lib/links";
 
 export default async function AdminDashboard() {
   await requireAdmin();
@@ -63,7 +64,7 @@ export default async function AdminDashboard() {
               <li key={s.id}>
                 <Link
                   prefetch={false}
-                  href={`/dukkanlar/${s.id}`}
+                  href={adminPath(`/dukkanlar/${s.id}`)}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-neutral-200 bg-white p-3 hover:border-neutral-400"
                 >
                   <div>

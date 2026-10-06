@@ -5,11 +5,12 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
+import { adminPath } from "../links";
 import { createClient } from "../supabase/server";
 
 export type AdminUser = { userId: string; email: string | null };
 
-export const ADMIN_LOGIN_PATH = "/giris";
+export const ADMIN_LOGIN_PATH = adminPath("/giris");
 
 export const getAdminUser = cache(async (): Promise<AdminUser | null> => {
   const supabase = await createClient();

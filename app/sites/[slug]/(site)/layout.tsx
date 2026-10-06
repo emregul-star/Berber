@@ -6,9 +6,11 @@
  * - Dükkanın teması (renkler, yazı tipi) burada sayfaya uygulanır.
  */
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader, type NavItem } from "@/components/site/site-header";
+import { PLATFORM_NAME } from "@/lib/constants";
 import { getShopBySlug } from "@/lib/shops";
 import { getShopSiteData } from "@/lib/site-data";
 import { resolveTheme, themeToRootCss } from "@/lib/themes";
@@ -25,9 +27,24 @@ export async function generateMetadata({ params }: LayoutProps<"/sites/[slug]">)
   const { slug } = await params;
   const data = await getShopSiteData(slug);
   if (!data) return {};
+  const { shop } = data;
+  const description = shop.description ?? `${shop.name}: hizmetler, fiyatlar ve online randevu.`;
+
+  // Paylaşım görseli /api/og/{slug}; sosyal medya botları tam adres ister (isteğin geldiği host).
+  const h = await headers();
+  const host = h.get("host") ?? "";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  const image = { url: `${proto}://${host}/api/og/${slug}`, width: 1200, height: 630, alt: shop.name };
+
   return {
-    title: data.shop.name,
-    description: data.shop.description ?? `${data.shop.name} — online randevu`,
+    // Alt sayfalar "Randevu Al | Dükkan Adı" biçiminde başlık alır
+    title: { absolute: `${shop.name} — Online Randevu`, template: `%s | ${shop.name}` },
+    description,
+    openGraph: { type: "website", locale: "tr_TR", siteName: shop.name, title: shop.name, description, images: [image] },
+    twitter: { card: "summary_large_image", title: shop.name, description, images: [image.url] },
+    // Askıdaki dükkan arama motorlarında görünmesin
+    robots: shop.status === "suspended" ? { index: false } : undefined,
+    applicationName: PLATFORM_NAME,
   };
 }
 

@@ -29,6 +29,12 @@ export type PanelUser = {
 export const LOGIN_PATH = "/panel/giris";
 
 /**
+ * Demo dükkan herkese açık olduğu için ziyaretçiler giriş hesaplarını ve şifreleri değiştiremez
+ * (aksi halde bir ziyaretçi şifreyi değiştirip demoyu diğerlerine kapatabilirdi).
+ */
+export const DEMO_ACCOUNT_LOCKED_MESSAGE = "Demo dükkanda giriş hesapları ve şifreler değiştirilemez.";
+
+/**
  * Giriş yapmış ve bu dükkanın üyesi olan kullanıcıyı döndürür; değilse null.
  * cache(): aynı istek içinde layout + sayfa + bileşenler çağırsa da bir kez çalışır.
  */

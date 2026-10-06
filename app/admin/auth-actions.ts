@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAdminUser, ADMIN_LOGIN_PATH } from "@/lib/admin/auth";
 import { LOGIN_LIMITS } from "@/lib/constants";
+import { adminPath } from "@/lib/links";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
@@ -37,7 +38,7 @@ export async function adminLoginAction(_prev: FormState, formData: FormData): Pr
   // DİKKAT: Burada redirect("/") KULLANILMAZ. Server Action içindeki yönlendirmede Next hedef sayfayı
   // aynı istekte çizer ve proxy'nin adres yeniden yazmasını atlar; admin alt alan adında "/" yerine
   // platform ana sayfası açılırdı. Bunun yerine tarayıcı sayfayı baştan yükler (bkz. LoginForm).
-  return { redirectTo: "/" };
+  return { redirectTo: adminPath("/") };
 }
 
 export async function adminLogoutAction(): Promise<void> {

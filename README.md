@@ -1,13 +1,37 @@
 # BerberPlatform
 
-Erkek berberleri için çok kiracılı (multi-tenant) online randevu platformu.
+Erkek berberleri için çok kiracılı (multi-tenant) online randevu platformu. Her dükkanın kendi
+randevu sitesi ve yönetim paneli olur; platform sahibi tüm dükkanları tek bir süper yönetici
+panelinden yönetir. Müşteri uygulama indirmez, üye olmaz: linkten 7/24 randevu alır.
+
 Projenin tüm gereksinimleri [berber-randevu-platformu.md](berber-randevu-platformu.md) dosyasındadır.
 
-> Bu README her aşamada güncellenecek; tam kurulum ve yayına alma rehberi Aşama 10'da tamamlanacak.
+<p>
+  <img src="public/landing/site-mobile.png" alt="Dükkan sitesi (telefon)" width="210">
+  <img src="public/landing/booking-mobile.png" alt="Randevu alma (telefon)" width="210">
+</p>
+<img src="public/landing/panel-desktop.png" alt="Yönetim paneli" width="640">
+
+## Özellikler
+
+- **Dükkan sitesi:** hizmetler, fiyatlar, ekip, galeri, yorumlar, harita, çalışma saatleri; 4 hazır tema
+- **Randevu alma:** hizmet → berber (veya "fark etmez") → gün/saat → bilgiler. Molalar, izinler,
+  kapalı günler ve en erken/en geç randevu kuralları hesaba katılır; aynı saate iki randevu
+  veritabanı kuralıyla engellenir
+- **Müşteri randevu yönetimi:** tahmin edilemez linkle iptal ve saat değiştirme, takvime ekleme (.ics)
+- **Dükkan paneli:** bugün, takvim, elle randevu, hizmetler, berberler, saatler, izinler, galeri,
+  yorumlar, ayarlar, abonelik; sahip ve berber rolleri
+- **İstatistikler:** randevu, gelmeyen, tahmini kazanç; berber/hizmet/gün/saat dağılımı
+- **Süper yönetici:** dükkanlar, yeni dükkan sihirbazı, abonelik ve ödeme takibi, platform ayarları
+- **Bildirimler:** e-posta (Resend) ve panelden hazır WhatsApp mesajları
+- **Güvenlik:** her tabloda Supabase RLS, sunucu tarafı yetki kontrolleri, hız sınırları, honeypot,
+  KVKK onayı ve 24 ay sonra otomatik anonimleştirme
+- **SEO ve paylaşım:** dükkan adına göre başlık/açıklama, otomatik üretilen paylaşım görseli (Open Graph)
 
 ## Teknolojiler
 
-Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Supabase · Vitest
+Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Supabase (Postgres, Auth, Storage, pg_cron) ·
+Resend · Vitest · Vercel
 
 ## Yerel kurulum
 
@@ -18,7 +42,7 @@ Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Supabase · Vitest
    ```
 3. `.env.example` dosyasını `.env.local` adıyla kopyalayıp değerleri doldurun.
    `SUPABASE_SECRET_KEY` gizlidir; sadece `.env.local` içinde durur, git'e girmez.
-4. Geliştirme sunucusunu başlatın:
+4. Veritabanını hazırlayın (aşağıdaki "Veritabanı" bölümü), sonra geliştirme sunucusunu başlatın:
    ```bash
    npm run dev
    ```
@@ -31,7 +55,7 @@ Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Supabase · Vitest
 | http://demo.localhost:3000 | Demo dükkanın müşteri sitesi |
 | http://demo.localhost:3000/panel | Demo dükkanın yönetim paneli |
 | http://admin.localhost:3000 | Süper yönetici paneli |
-| http://localhost:3000/?shop=demo | Demo dükkan (sadece geliştirme modunda; seçim çerezde hatırlanır, `?shop=` ile çıkılır) |
+| http://localhost:3000/?shop=demo | Demo dükkan, alt alan adı olmadan (seçim çerezde hatırlanır, `?shop=` ile çıkılır) |
 
 Modern tarayıcılar `*.localhost` adreslerini ek ayar gerektirmeden bilgisayarınıza yönlendirir.
 
@@ -45,7 +69,7 @@ Modern tarayıcılar `*.localhost` adreslerini ek ayar gerektirmeden bilgisayar�
 | `npm run lint` | Kod kontrolü (ESLint) |
 | `npm test` | Birim testleri (Vitest) |
 | `npm run db:push` | Yeni migration'ları Supabase'e uygular |
-| `npm run db:seed` | Demo dükkanı sıfırlayıp yeniden oluşturur |
+| `npm run db:seed` | Demo dükkanı veritabanında sıfırlar (hesapları da bağlamak için `demo:reset`) |
 | `npm run db:test` | Güvenlik (RLS) kontrollerini çalıştırır; tüm satırlarda `passed: true` olmalı |
 | `npm run db:test:maintenance` | Günlük bakım işlerinin (gecikme, KVKK anonimleştirme) kontrolü |
 | `npm run admin:create -- --email X` | Süper yönetici hesabı oluşturur |
@@ -145,13 +169,18 @@ Her gün 03:00 (İstanbul) veritabanında `private.daily_maintenance()` çalış
 - Eski hız sınırı kayıtlarını siler
 
 Kontrol testi: `npm run db:test:maintenance` (geri alınan işlem içinde çalışır).
-Not: Supabase ücretsiz projeleri bir hafta hiç kullanılmazsa duraklatılır; duraklayınca bu işler de durur.
+Not: Supabase ücretsiz projeleri bir hafta hiç kullanılmazsa duraklatılır; yayındaki günlük demo
+sıfırlama görevi bunu önler (bkz. "Ücretsiz yayına alma").
 
 ## Demo dükkan
 
 - `npm run demo:reset`: demo verisini bugüne göre baştan kurar, eski demo görsellerini siler ve
   `.env.local`'deki `DEMO_OWNER_EMAIL` / `DEMO_BARBER_EMAIL` hesaplarını bağlar (şifreler değişmez;
   hesap yoksa oluşturulup şifre ekrana yazılır). Aynı işlem yönetici panosundaki **Demo'yu sıfırla** butonundadır.
+- Yayında her gece otomatik çalışır (`/api/cron/demo-reset`, `CRON_SECRET` ile korunur).
+- `DEMO_OWNER_PASSWORD` / `DEMO_BARBER_PASSWORD` tanımlıysa demo panel giriş sayfasında
+  **Dükkan sahibi olarak dene** / **Berber olarak dene** butonları çıkar; şifreler sayfada gösterilmez.
+- Demo dükkanda ziyaretçiler giriş hesaplarını ve şifreleri değiştiremez; diğer değişiklikler gece silinir.
 
 ## İstatistikler
 
@@ -167,4 +196,79 @@ Not: Supabase ücretsiz projeleri bir hafta hiç kullanılmazsa duraklatılır; 
 - `admin.PLATFORM_DOMAIN/...` → `app/admin/...`
 - Ana alan adı → `app/(platform)/...`
 
-`/sites` ve `/admin` yollarına dışarıdan doğrudan erişim engellidir.
+`/sites` ve `/admin` yollarına dışarıdan doğrudan erişim engellidir. Tek adres modunda
+(`NEXT_PUBLIC_SINGLE_DOMAIN_MODE=true`) dükkan `?shop=slug` ile seçilir ve süper yönetici paneli
+`/admin` yolundan açılır; linkler `lib/links.ts` içindeki yardımcılarla iki moda göre üretilir.
+
+## SEO ve erişilebilirlik
+
+- Dükkan sayfaları dükkan adıyla başlık/açıklama ve paylaşım görseli alır (`/api/og/{slug}`, sunucuda
+  `next/og` ile çizilir). Paneller ve kişiye özel randevu sayfaları arama motorlarına kapalıdır (`app/robots.ts`).
+- Görseller `next/image` ile optimize edilir; panelden yüklenen görseller tarayıcıda küçültülüp WebP
+  olarak yüklenir (en fazla 5 MB).
+- Formlarda etiketler, klavyeyle kullanım ve odak göstergeleri vardır; sayfalar axe-core ile
+  (WCAG 2.1 AA) taranmıştır.
+
+## Ücretsiz yayına alma (Vercel + Supabase, alan adı olmadan)
+
+Bu kurulumun **hiçbir ücreti yoktur**: Vercel Hobby, Supabase Free ve Resend ücretsiz planları
+kullanılır. Alan adı alınmadığı için site `proje-adi.vercel.app` adresinde çalışır.
+`*.vercel.app` adreslerinde alt alan adı (`demo.proje-adi.vercel.app`) açılamadığı için
+**tek adres modu** kullanılır:
+
+| Adres | Ne açılır |
+|---|---|
+| `https://proje-adi.vercel.app` | Platform tanıtım sayfası |
+| `https://proje-adi.vercel.app/?shop=demo` | Demo dükkan sitesi (seçim çerezde hatırlanır) |
+| `https://proje-adi.vercel.app/panel/giris?shop=demo` | Demo dükkan paneli |
+| `https://proje-adi.vercel.app/admin` | Süper yönetici paneli |
+
+1. **GitHub:** github.com'da yeni bir depo açın (portföy için "Public" olabilir; `.env.local` git'e
+   girmez). Proje klasöründe:
+   ```bash
+   git remote add origin https://github.com/KULLANICI/DEPO.git
+   git push -u origin main
+   ```
+2. **Vercel:** vercel.com'a GitHub hesabınızla girin (Hobby planı, ücretsiz) → *Add New → Project* →
+   depoyu seçin. *Environment Variables* bölümüne şunları girin (değerler `.env.local` ile aynı):
+
+   | Değişken | Değer |
+   |---|---|
+   | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` | Supabase anahtarları |
+   | `NEXT_PUBLIC_PLATFORM_DOMAIN` | `proje-adi.vercel.app` (Vercel'in verdiği adres) |
+   | `NEXT_PUBLIC_SINGLE_DOMAIN_MODE` | `true` |
+   | `NEXT_PUBLIC_PLATFORM_NAME` | `BerberPlatform` |
+   | `AUTH_EMAILS_ENABLED` | `false` |
+   | `CRON_SECRET` | rastgele uzun bir değer (günlük demo sıfırlamayı korur) |
+   | `DEMO_OWNER_EMAIL`, `DEMO_BARBER_EMAIL`, `DEMO_BARBER_NAME`, `DEMO_OWNER_PASSWORD`, `DEMO_BARBER_PASSWORD` | demo hesapları ("… olarak dene" butonları için) |
+   | `EMAIL_PROVIDER_API_KEY`, `EMAIL_FROM` | isteğe bağlı (Resend) |
+   | `NEXT_PUBLIC_PLATFORM_SUPPORT_WHATSAPP` | isteğe bağlı; tanıtım sayfasındaki WhatsApp butonu |
+
+   Vercel adresi ilk yayından sonra belli oluyorsa `NEXT_PUBLIC_PLATFORM_DOMAIN`'i girip
+   *Redeploy* yapın (`NEXT_PUBLIC_` değerleri derleme sırasında koda yazılır).
+3. **Supabase:** *Authentication → URL Configuration → Site URL* alanına `https://proje-adi.vercel.app`
+   yazın. *Authentication → Sign In / Providers* bölümünde herkese açık kaydı
+   (*Allow new users to sign up*) kapalı tutun.
+4. **Günlük görev:** `vercel.json` içindeki cron her gün 01:00 UTC'de (04:00 İstanbul)
+   `/api/cron/demo-reset` adresini çağırır: demo dükkan sıfırlanır, örnek randevular bugüne göre
+   yeniden kurulur. Bu düzenli kullanım, Supabase ücretsiz projesinin "1 hafta kullanılmadı"
+   gerekçesiyle duraklatılmasını da önler.
+5. **Yönetici hesabı:** kendi bilgisayarınızda `npm run admin:create -- --email siz@ornek.com`,
+   sonra `https://proje-adi.vercel.app/admin` adresinden giriş yapın.
+
+### Ücretsiz planların sınırları
+
+- **Vercel Hobby** sadece ticari olmayan (kişisel/portföy) kullanım içindir. Gerçek, ücretli
+  müşterilerle kullanılacaksa Vercel Pro (kullanıcı başına aylık 20 $) gerekir.
+- **Supabase Free:** 500 MB veritabanı, 1 GB dosya alanı; 1 hafta hiç istek gelmezse proje duraklar
+  (yukarıdaki günlük görev bunu önler). "Sızdırılmış şifre koruması" sadece ücretli planda vardır.
+- **Resend Free:** günde 100, ayda 3.000 e-posta; alan adı doğrulanmadan sadece hesap sahibinin
+  adresine gönderir.
+
+### İleride alan adıyla yayın
+
+Alan adı alınınca (yıllık ücretlidir): alan adının nameserver'larını Vercel'e yönlendirin, Vercel'de
+ana alan adını ve `*.alanadi.com`'u projeye ekleyin, `NEXT_PUBLIC_PLATFORM_DOMAIN=alanadi.com` ve
+`NEXT_PUBLIC_SINGLE_DOMAIN_MODE=false` yapın. Dükkanlar `demo.alanadi.com`, yönetici paneli
+`admin.alanadi.com` adresinden açılır. E-posta için Resend'de alan adını doğrulayın (SPF/DKIM).
+
