@@ -8,6 +8,8 @@
 export type AppointmentNotificationData = {
   appointmentId: string;
   status: string;
+  /** "web" (müşteri sitesinden) veya "panel" (dükkan elle ekledi) */
+  source: string;
   serviceName: string;
   barberName: string;
   startsAt: Date;
@@ -40,6 +42,8 @@ export type AppointmentNotificationData = {
   manageUrl?: string;
   /** Saat değiştirmede eski zaman */
   previousWhenLabel?: string;
+  /** Dükkanın iptal sebebi (varsa) */
+  cancelReason?: string | null;
 };
 
 export type CancelledBy = "customer" | "shop";

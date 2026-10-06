@@ -19,6 +19,19 @@ export function normalizeTrMobile(input: string): string | null {
   return `90${digits}`;
 }
 
+/**
+ * Panelden elle girilen numaralar için: cep (5xx) veya sabit hat (2xx, 3xx, 4xx) kabul eder.
+ * Geçersizse null; geçerliyse "90xxxxxxxxxx".
+ */
+export function normalizeTrPhoneAny(input: string): string | null {
+  let digits = input.replace(/\D/g, "");
+  if (digits.startsWith("0090")) digits = digits.slice(4);
+  else if (digits.startsWith("90") && digits.length === 12) digits = digits.slice(2);
+  else if (digits.startsWith("0") && digits.length === 11) digits = digits.slice(1);
+  if (!/^[2-5]\d{9}$/.test(digits)) return null;
+  return `90${digits}`;
+}
+
 /** "905321234567" -> "0532 123 45 67" (ekranda göstermek için) */
 export function formatTrPhone(normalized: string): string {
   const d = normalized.replace(/^90/, "");

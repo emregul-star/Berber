@@ -31,7 +31,7 @@ async function loadNotificationData(event: AppointmentEvent): Promise<Appointmen
   const { data, error } = await createAdminClient()
     .from("appointments")
     .select(
-      "id, status, starts_at, ends_at, price_at_booking, customer_name, customer_phone, customer_email, customer_note, " +
+      "id, status, starts_at, ends_at, price_at_booking, customer_name, customer_phone, customer_email, customer_note, cancel_reason, source, " +
         "shops!inner(name, slug, email, phone, whatsapp_number, address, logo_url, theme_preset, primary_color, accent_color, is_demo, custom_domain), " +
         "services(name), barbers(name)",
     )
@@ -48,6 +48,8 @@ async function loadNotificationData(event: AppointmentEvent): Promise<Appointmen
         customer_phone: string;
         customer_email: string | null;
         customer_note: string | null;
+        cancel_reason: string | null;
+        source: string;
         shops: {
           name: string;
           slug: string;
@@ -79,6 +81,7 @@ async function loadNotificationData(event: AppointmentEvent): Promise<Appointmen
   return {
     appointmentId: data.id,
     status: data.status,
+    source: data.source,
     serviceName: data.services?.name ?? "Hizmet",
     barberName: data.barbers?.name ?? "Berber",
     startsAt,
@@ -106,6 +109,7 @@ async function loadNotificationData(event: AppointmentEvent): Promise<Appointmen
     },
     manageUrl: token ? `${baseUrl}/randevu/${token}` : undefined,
     previousWhenLabel: event.type === "rescheduled" ? formatWhen(new Date(event.previousStartsAt)) : undefined,
+    cancelReason: data.cancel_reason,
   };
 }
 

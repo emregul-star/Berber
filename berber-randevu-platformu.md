@@ -437,6 +437,12 @@ Giriş: Supabase Auth, e-posta + şifre. "Şifremi unuttum" akışı olmalı. Pa
 - Bir hizmet veya berber silinmez, **pasif yapılır** (geçmiş randevular ve istatistikler bozulmasın). Hiç randevusu olmayanlar silinebilir.
 - Panelde bekleyen onay sayısı menüde rozet olarak görünür.
 
+**Uygulama notları (Aşama 7):**
+- **Ücretsiz kurulum kararı:** Supabase'in yerleşik e-posta servisi sadece proje ekibine ve saatte 2 e-posta gönderir. Bu yüzden panel hesapları e-posta gönderilmeden **geçici şifreyle** açılır (berber hesapları sahip tarafından panelden, sahip hesapları `npm run panel:user` ile). "Şifremi unuttum" e-posta akışı kodda hazırdır ancak `AUTH_EMAILS_ENABLED=true` yapılana (alan adı + özel SMTP) kadar kapalıdır; kapalıyken kullanıcı sahibe/platform yöneticisine yönlendirilir.
+- **Güvenlik:** Sahip, sadece başka hiçbir dükkanda üyeliği olmayan ve platform yöneticisi olmayan berber hesaplarının şifresini sıfırlayabilir (başka bir kullanıcının e-postasını bağlayıp hesabını ele geçirmeyi önlemek için).
+- Randevu iptalinde isteğe bağlı sebep için `appointments.cancel_reason` alanı eklendi; müşteriye giden iptal e-postasında ve WhatsApp mesajında gösterilir.
+- Görseller tarayıcıda küçültülüp WebP olarak doğrudan Storage'a yüklenir (Bölüm 15, Aşama 10'daki performans maddesi bu aşamada yapıldı).
+
 ### 8.3 İstatistikler
 - Seçilebilir dönem: bugün, bu hafta, bu ay, geçen ay, özel aralık
 - Toplam randevu, tamamlanan, iptal edilen, gelmeyen (no-show) sayıları
@@ -445,6 +451,11 @@ Giriş: Supabase Auth, e-posta + şifre. "Şifremi unuttum" akışı olmalı. Pa
 - En çok tercih edilen hizmetler
 - En yoğun gün ve saatler
 - Basit grafikler (ör. Recharts). Hesaplamalar sunucuda yapılmalı.
+
+**Uygulama notları (Aşama 8):**
+- Grafikler kütüphanesiz, sunucuda HTML/CSS olarak çizilir (telefona ek JavaScript gitmez); her grafiğin altında "Tablo olarak göster" vardır.
+- Tanımlar (`lib/stats.ts`): *Toplam* = dönemde başlayan tüm randevular (iptaller dahil); *Tahmini kazanç* = tamamlanan randevuların `price_at_booking` toplamı (kuruş hassasiyetinde); *Planlanan* = bekleyen + onaylı randevuların toplamı; berber/hizmet/gün/saat dağılımları iptal edilmemiş randevular üzerinden; gün ve saat İstanbul saatine göre.
+- Doğrulama: `lib/stats.test.ts` içinde elle hesaplanmış küçük senaryo + demo verisinde panel sonuçları bağımsız bir SQL sorgusuyla karşılaştırıldı.
 
 ---
 
@@ -523,6 +534,16 @@ Sadece `platform_admins` tablosundaki kullanıcılar girebilir.
 
 ### 11.3 İleride online ödeme
 - `payments.provider` ve `provider_ref` alanları hazır. İlk sürümde online ödeme **uygulanmayacak.**
+
+**Uygulama notları (Aşama 9):**
+- **Platform ayarları:** Tek satırlık `platform_settings` tablosu (IBAN, alıcı adı, banka, ödeme notu). IBAN kayıttan önce TR formatı + mod-97 kontrol hanesiyle doğrulanır (`lib/iban.ts`). Giriş yapmış panel kullanıcıları okuyabilir, sadece süper yönetici değiştirebilir.
+- **Yeni dükkan sihirbazı:** Dükkan, abonelik, sahip üyeliği, varsayılan çalışma saatleri (Pzt-Cmt 09-20, Pazar kapalı), varsayılan hizmetler ve isteğe bağlı ilk berber tek bir veritabanı işleminde oluşturulur (`create_shop_with_defaults`, sadece sunucu anahtarı çağırabilir). Sahip hesabı yeni açılıyorsa geçici şifre ekranda bir kez gösterilir; işlem başarısız olursa yeni açılan hesap geri silinir.
+- **Ödeme ekleme:** Aylık ödeme `paid_until`'ı ileri alır (son ödeme tarihinden devam eder, 31 günden fazla gecikmişse bugünden başlar; tarih asla geri gitmez). Kurulum ücreti `paid_until`'ı değiştirmez. Kurallar `lib/billing.ts` içinde, birim testli.
+- **Günlük iş:** `pg_cron` (Supabase ücretsiz planında mevcut) her gün 00:00 UTC (03:00 İstanbul) `private.daily_maintenance()` çalıştırır: süresi geçen abonelikleri `overdue` yapar, 24 aydan eski tamamlanmış/iptal randevuların müşteri bilgilerini anonimleştirir (KVKK, Bölüm 13), eski hız sınırı kayıtlarını siler. Vercel Cron kullanılmadı.
+- **Demo sıfırlama:** Eski seed içeriği `reset_demo_shop()` fonksiyonuna taşındı; `npm run demo:reset` ve yönetici panosundaki buton bunu çağırıp demo hesaplarını yeniden bağlar.
+- **Yönlendirme notu:** Giriş sonrası Server Action içinde `redirect()` kullanılmaz; Next.js hedef sayfayı aynı istekte çizip `proxy.ts` yeniden yazmasını atladığı için admin alt alan adında platform ana sayfası açılıyordu. Bunun yerine tarayıcı sayfayı baştan yükler.
+- **Komutlar:** İlk süper yönetici `npm run admin:create -- --email ...` ile açılır (e-posta gönderilmez).
+- **Maliyet notu:** Supabase'in "sızdırılmış şifre koruması" sadece Pro planda (ücretli) olduğu için açılmadı.
 
 ---
 

@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           barber_id: string
           blocked_until: string
+          cancel_reason: string | null
           cancelled_at: string | null
           created_at: string
           customer_email: string | null
@@ -38,6 +39,7 @@ export type Database = {
         Insert: {
           barber_id: string
           blocked_until: string
+          cancel_reason?: string | null
           cancelled_at?: string | null
           created_at?: string
           customer_email?: string | null
@@ -58,6 +60,7 @@ export type Database = {
         Update: {
           barber_id?: string
           blocked_until?: string
+          cancel_reason?: string | null
           cancelled_at?: string | null
           created_at?: string
           customer_email?: string | null
@@ -292,6 +295,33 @@ export type Database = {
           created_at?: string
           id?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          account_holder: string | null
+          bank_name: string | null
+          iban: string | null
+          id: number
+          payment_note: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_holder?: string | null
+          bank_name?: string | null
+          iban?: string | null
+          id?: number
+          payment_note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_holder?: string | null
+          bank_name?: string | null
+          iban?: string | null
+          id?: number
+          payment_note?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -706,10 +736,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_shop_with_defaults: {
+        Args: {
+          p_billing_day: number
+          p_created_by: string
+          p_first_barber_name: string
+          p_monthly_fee: number
+          p_name: string
+          p_owner_user_id: string
+          p_services: Json
+          p_setup_fee: number
+          p_slug: string
+          p_theme: string
+        }
+        Returns: string
+      }
       rate_limit_hit: {
         Args: { p_key: string; p_window_seconds: number }
         Returns: number
       }
+      reset_demo_shop: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never

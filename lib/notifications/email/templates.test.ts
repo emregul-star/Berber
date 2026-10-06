@@ -11,6 +11,7 @@ import {
 const base: AppointmentNotificationData = {
   appointmentId: "a1",
   status: "confirmed",
+  source: "web",
   serviceName: "Saç Kesimi",
   barberName: "Ahmet Yılmaz",
   startsAt: new Date("2026-10-12T11:30:00Z"),
@@ -103,5 +104,13 @@ describe("kişiye özel link uyarısı", () => {
     expect(customerCreatedEmail(base).html).toContain("kimseyle paylaşmayın");
     expect(shopCreatedEmail(base).html).not.toContain("kimseyle paylaşmayın");
     expect(customerCancelledEmail(base, "shop").html).not.toContain("kimseyle paylaşmayın");
+  });
+});
+
+describe("iptal sebebi", () => {
+  it("dükkan iptalinde sebep e-postada görünür (kaçırılarak)", () => {
+    const email = customerCancelledEmail({ ...base, cancelReason: "Ustamız <hasta>" }, "shop");
+    expect(email.html).toContain("Sebep");
+    expect(email.html).toContain("Ustamız &lt;hasta&gt;");
   });
 });

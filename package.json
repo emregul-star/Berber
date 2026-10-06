@@ -13,7 +13,11 @@
     "db:seed": "supabase db query --linked -f supabase/seed.sql",
     "db:test": "supabase db query --linked -f supabase/tests/security_check.sql",
     "db:advisors": "supabase db advisors --linked --type all",
-    "db:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts"
+    "db:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts",
+    "panel:user": "node --env-file=.env.local scripts/create-panel-user.mjs",
+    "db:test:maintenance": "supabase db query --linked -f supabase/tests/maintenance_check.sql",
+    "admin:create": "node --env-file=.env.local scripts/create-admin.mjs",
+    "demo:reset": "node --env-file=.env.local scripts/demo-reset.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",

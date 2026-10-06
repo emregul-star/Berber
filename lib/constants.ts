@@ -61,5 +61,33 @@ export const BOOKING_LIMITS = {
   maxActivePerPhone: 3,
 } as const;
 
+/**
+ * Supabase Auth e-postaları (şifre sıfırlama) açık mı?
+ * Supabase'in yerleşik e-posta servisi sadece proje ekibine ve saatte 2 e-posta gönderir.
+ * Alan adı alınıp Supabase'e özel SMTP (ör. Resend) tanımlanınca "true" yapılır.
+ * Kapalıyken "Şifremi unuttum" sayfası kullanıcıyı yöneticiye yönlendirir.
+ */
+export const AUTH_EMAILS_ENABLED = process.env.AUTH_EMAILS_ENABLED === "true";
+
+/** Panelde "yardım" için gösterilen platform destek WhatsApp numarası (905xxxxxxxxx, isteğe bağlı) */
+export const PLATFORM_SUPPORT_WHATSAPP = process.env.NEXT_PUBLIC_PLATFORM_SUPPORT_WHATSAPP || "";
+
+/** Panel girişinde IP başına deneme sınırı (kaba kuvvet saldırılarına karşı) */
+export const LOGIN_LIMITS = { perIp: { max: 10, windowSeconds: 10 * 60 } } as const;
+
+/**
+ * Ödemesi bu kadar günden fazla geciken dükkan, süper yönetici panosunda "askıya alınmalı"
+ * olarak işaretlenir (Bölüm 11.2). Otomatik askıya alma YOKTUR; karar yöneticinindir.
+ */
+export const SUSPEND_SUGGEST_AFTER_DAYS = 7;
+
+/** Yeni dükkan sihirbazındaki varsayılan hizmetler (sihirbazda düzenlenebilir) — Bölüm 11.1 */
+export const DEFAULT_SERVICES = [
+  { name: "Saç Kesimi", duration: 30, price: 350 },
+  { name: "Sakal Tıraşı", duration: 20, price: 200 },
+  { name: "Saç + Sakal", duration: 45, price: 500 },
+  { name: "Çocuk Tıraşı", duration: 20, price: 250 },
+] as const;
+
 /** Geliştirme modunda ?shop=slug ile seçilen dükkanın hatırlandığı çerez. */
 export const DEV_SHOP_COOKIE = "dev_shop";

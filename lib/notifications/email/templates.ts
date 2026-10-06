@@ -144,7 +144,7 @@ export function customerCancelledEmail(d: AppointmentNotificationData, by: Cance
     by === "customer"
       ? `Merhaba ${d.customer.name}, randevunuz isteğiniz üzerine iptal edildi.`
       : `Merhaba ${d.customer.name}, üzgünüz, ${d.shop.name} aşağıdaki randevunuzu iptal etmek zorunda kaldı.`;
-  const rows = detailRows(d);
+  const rows = detailRows(d, by === "shop" && d.cancelReason ? [["Sebep", d.cancelReason]] : []);
   const contact = [d.shop.phone ? `telefon: ${d.shop.phone}` : "", d.shop.whatsappNumber ? `WhatsApp: +${d.shop.whatsappNumber}` : ""]
     .filter(Boolean)
     .join(", ");

@@ -75,7 +75,8 @@ export class EmailProvider implements NotificationProvider {
       this.send(d, "customer", "created", customerCreatedEmail(d), [
         { filename: "randevu.ics", content: Buffer.from(ics, "utf8").toString("base64"), contentType: "text/calendar" },
       ]),
-      this.send(d, "shop", "created", shopCreatedEmail(d)),
+      // Randevuyu dükkan kendisi eklediyse dükkana "yeni randevu" e-postası gerekmez
+      d.source === "panel" ? Promise.resolve() : this.send(d, "shop", "created", shopCreatedEmail(d)),
     ], "created");
   }
 

@@ -47,6 +47,10 @@ Modern tarayıcılar `*.localhost` adreslerini ek ayar gerektirmeden bilgisayar�
 | `npm run db:push` | Yeni migration'ları Supabase'e uygular |
 | `npm run db:seed` | Demo dükkanı sıfırlayıp yeniden oluşturur |
 | `npm run db:test` | Güvenlik (RLS) kontrollerini çalıştırır; tüm satırlarda `passed: true` olmalı |
+| `npm run db:test:maintenance` | Günlük bakım işlerinin (gecikme, KVKK anonimleştirme) kontrolü |
+| `npm run admin:create -- --email X` | Süper yönetici hesabı oluşturur |
+| `npm run panel:user -- ...` | Dükkan paneline sahip/berber hesabı açar |
+| `npm run demo:reset` | Demo dükkanı ve demo hesaplarını sıfırlar |
 | `npm run db:advisors` | Supabase güvenlik/performans denetimi |
 | `npm run db:types` | Veritabanından TypeScript tiplerini yeniden üretir |
 
@@ -65,8 +69,7 @@ npm run db:seed
   değişiklikleri her zaman yeni bir migration dosyasıyla yapılır: `npx supabase migration new <ad>`.
 - Yeni tablo eklerken `anon` / `authenticated` yetkileri (GRANT) ve RLS politikaları aynı
   migration'da açıkça yazılmalıdır; Supabase yeni tabloları otomatik olarak dışarı açmaz.
-- Süper yönetici eklemek için (kullanıcı Supabase Auth'ta oluşturulduktan sonra):
-  `npx supabase db query --linked "insert into platform_admins (user_id) select id from auth.users where email = 'siz@ornek.com'"`
+- Süper yönetici eklemek için: `npm run admin:create -- --email siz@ornek.com` (aşağıya bakın).
 
 ## ⚠️ KVKK aydınlatma metni hakkında
 
@@ -104,6 +107,57 @@ Hazır temaların okunabilirliği (kontrast) birim testleriyle kontrol edilir.
   doğrulanmalı ve `EMAIL_FROM` o alan adından bir adres olmalıdır (bkz. Bölüm 16, madde 6).
 - E-postalar yanıt gönderildikten sonra (`after()`) gider; başarısız olursa randevu etkilenmez,
   hata sunucu loglarına yazılır. **Demo dükkanda hiçbir e-posta gönderilmez.**
+
+## Dükkan paneli (`{slug}.PLATFORM_DOMAIN/panel`)
+
+- Giriş: e-posta + şifre (Supabase Auth). Roller: **sahip** (her şey) ve **berber** (sadece kendi
+  randevuları, kendi izinleri, kendi adına randevu ekleme). Yetki her sayfada ve her işlemde
+  `lib/panel/auth.ts` ile kontrol edilir; son savunma hattı veritabanı RLS kurallarıdır.
+- **Ücretsiz kurulumda hesaplar e-posta gönderilmeden açılır** (Supabase'in yerleşik e-postası saatte
+  2 e-posta ve sadece proje ekibine gönderir):
+  - Sahip hesabı: `npm run panel:user -- --slug demo --email sahip@ornek.com --role owner`
+  - Berber hesabı: panelde **Berberler > Giriş hesabı aç** (geçici şifre ekranda bir kez gösterilir)
+    veya `npm run panel:user -- --slug demo --email berber@ornek.com --role barber --barber "Berber Adı"`
+  - Şifresini unutan berbere sahip **Yeni geçici şifre ver** ile yeni şifre verir; sahibe ise
+    yukarıdaki komut (aynı e-postayla tekrar çalıştırmak şifreyi yeniler). Kullanıcılar şifrelerini
+    panelde **Şifre değiştir** sayfasından değiştirir.
+  - Alan adı alınıp Supabase'e özel SMTP tanımlanınca `.env.local`'de `AUTH_EMAILS_ENABLED=true`
+    yapılır; "Şifremi unuttum" e-postayla çalışmaya başlar.
+- `npm run db:seed` demo dükkanı yeniden oluşturduğu için panel üyelikleri de silinir; sonrasında
+  `npm run demo:reset` kullanın; demo hesaplarını otomatik bağlar.
+
+## Süper yönetici paneli (`admin.PLATFORM_DOMAIN`, yerelde http://admin.localhost:3000)
+
+- İlk yönetici hesabınızı oluşturun (e-posta gönderilmez; şifre verilmezse geçici şifre ekrana yazılır):
+  `npm run admin:create -- --email siz@ornek.com`
+- Sayfalar: **Pano** (aktif dükkan, bu ay beklenen gelir, alınan ödemeler, gecikmiş ödemeler —
+  7 günden fazla gecikene "Askıya alınmalı" işareti), **Dükkanlar**, **Yeni dükkan** sihirbazı
+  (dükkan + sahip hesabı + abonelik + varsayılan saatler/hizmetler tek seferde), **Dükkan detayı**
+  (abonelik, ödeme ekle → `paid_until` otomatik ilerler, askıya al / aktif et, üyelere geçici şifre),
+  **Platform ayarları** (IBAN — kontrol hanesi doğrulanır; dükkan sahibinin Abonelik sayfasında görünür).
+- Otomatik askıya alma yoktur; karar yöneticinindir (`SUSPEND_SUGGEST_AFTER_DAYS`, `lib/constants.ts`).
+
+## Günlük otomatik işler (Supabase pg_cron, ücretsiz)
+
+Her gün 03:00 (İstanbul) veritabanında `private.daily_maintenance()` çalışır:
+- Ödenmiş süresi geçen abonelikleri "gecikti" yapar
+- 24 aydan eski tamamlanmış/iptal randevulardaki müşteri iletişim bilgilerini anonimleştirir (KVKK)
+- Eski hız sınırı kayıtlarını siler
+
+Kontrol testi: `npm run db:test:maintenance` (geri alınan işlem içinde çalışır).
+Not: Supabase ücretsiz projeleri bir hafta hiç kullanılmazsa duraklatılır; duraklayınca bu işler de durur.
+
+## Demo dükkan
+
+- `npm run demo:reset`: demo verisini bugüne göre baştan kurar, eski demo görsellerini siler ve
+  `.env.local`'deki `DEMO_OWNER_EMAIL` / `DEMO_BARBER_EMAIL` hesaplarını bağlar (şifreler değişmez;
+  hesap yoksa oluşturulup şifre ekrana yazılır). Aynı işlem yönetici panosundaki **Demo'yu sıfırla** butonundadır.
+
+## İstatistikler
+
+- Panel > İstatistikler: bugün / bu hafta / bu ay / geçen ay / özel aralık. Hesaplar sunucuda, saf
+  fonksiyon olarak `lib/stats.ts` içinde; elle kontrol edilebilir test senaryosu `lib/stats.test.ts`.
+- Berber sadece kendi randevularının istatistiğini görür (veritabanı kuralı).
 
 ## Nasıl çalışır? (kısaca)
 

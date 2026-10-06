@@ -38,6 +38,9 @@ export const WEEKDAY_NAMES = [
   "Pazar",
 ] as const;
 
+/** Grafiklerde kısa gün adları (Pazartesi/Pazar ve Cuma/Cumartesi karışmasın) */
+export const WEEKDAY_SHORT = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"] as const;
+
 /** "Ahmet Yılmaz" -> "AY" (fotoğrafı olmayan berberler için avatar) */
 export function initials(name: string): string {
   return name
