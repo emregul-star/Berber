@@ -8,7 +8,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { AUTH_EMAILS_ENABLED, LOGIN_LIMITS } from "@/lib/constants";
 import { DEMO_ACCOUNT_LOCKED_MESSAGE, getPanelUser, LOGIN_PATH, requirePanelUser } from "@/lib/panel/auth";
-import { demoCredentials, type DemoRole } from "@/lib/demo";
+import { demoCredentials, repairDemoAccount, type DemoRole } from "@/lib/demo";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getShopBySlug } from "@/lib/shops";
 import { createClient } from "@/lib/supabase/server";
@@ -61,8 +61,15 @@ export async function demoLoginAction(slug: string, role: DemoRole): Promise<For
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(credentials);
-  if (error || !(await getPanelUser(slug))) {
+  const signIn = async () => !(await supabase.auth.signInWithPassword(credentials)).error;
+  // Bir ziyaretçi demo hesabının şifresini veya bağlantısını bozmuş olabilir: bir kez onarıp tekrar dene.
+  // (getPanelUser istek boyunca önbelleğe alındığı için sadece ilk denemede sorulur; onarım üyeliği tamamlar.)
+  let ok = (await signIn()) && !!(await getPanelUser(slug));
+  if (!ok) {
+    await repairDemoAccount(role, shop.id).catch((e) => console.error("Demo hesabı onarılamadı:", e));
+    ok = await signIn();
+  }
+  if (!ok) {
     await supabase.auth.signOut();
     return { error: "Demo hesabı şu anda hazır değil. Lütfen daha sonra tekrar deneyin." };
   }

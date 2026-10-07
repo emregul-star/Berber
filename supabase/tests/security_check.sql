@@ -425,6 +425,67 @@ begin
 end;
 $$;
 
+-- -----------------------------------------------------------------------------
+-- 6) GÜVENLİK SIKILAŞTIRMASI (2026-10-07 denetimi)
+-- -----------------------------------------------------------------------------
+do $$
+declare
+  n int;
+  ok boolean;
+  msg text;
+  claims text := '{"sub":"00000000-0000-4000-a000-000000000001","role":"authenticated"}';  -- sahip A
+begin
+  -- 6a. Başka dükkanın izin kayıtları (sebep dahil) okunamaz
+  insert into public.time_off (shop_id, barber_id, starts_at, ends_at, reason)
+  values ('10000000-0000-4000-a000-00000000000b', null, now() + interval '20 days', now() + interval '21 days', 'gizli sebep');
+  set local role authenticated;
+  perform set_config('request.jwt.claims', claims, true);
+  select count(*) into n from public.time_off where shop_id = '10000000-0000-4000-a000-00000000000b';
+  reset role;
+  insert into results (check_name, passed, detail)
+  values ('sahip A: B dükkanının izin kayıtlarını görmez', n = 0, format('%s satır', n));
+
+  -- 6b. Demo dükkanda sahip bile giriş hesaplarını (üyelik, berber bağlantısı) değiştiremez
+  update public.shops set is_demo = true where id = '10000000-0000-4000-a000-00000000000a';
+  begin
+    set local role authenticated;
+    perform set_config('request.jwt.claims', claims, true);
+    delete from public.shop_members
+    where shop_id = '10000000-0000-4000-a000-00000000000a' and user_id = '00000000-0000-4000-a000-000000000003';
+    ok := false; msg := 'üyelik silindi';
+  exception when insufficient_privilege then
+    ok := true; msg := 'yetki hatası (beklenen)';
+  end;
+  reset role;
+  insert into results (check_name, passed, detail) values ('demo sahibi: üyelik silemez', ok, msg);
+
+  begin
+    set local role authenticated;
+    perform set_config('request.jwt.claims', claims, true);
+    update public.barbers set user_id = null where id = '20000000-0000-4000-a000-0000000000a1';
+    ok := false; msg := 'berber bağlantısı değişti';
+  exception when insufficient_privilege then
+    ok := true; msg := 'yetki hatası (beklenen)';
+  end;
+  reset role;
+  insert into results (check_name, passed, detail) values ('demo sahibi: berber hesap bağlantısını değiştiremez', ok, msg);
+
+  -- Demo olmayan dükkanda sahip berber hesabını yönetebilmeye devam eder
+  update public.shops set is_demo = false where id = '10000000-0000-4000-a000-00000000000a';
+  set local role authenticated;
+  perform set_config('request.jwt.claims', claims, true);
+  update public.barbers set user_id = null where id = '20000000-0000-4000-a000-0000000000a1';
+  get diagnostics n = row_count;
+  reset role;
+  insert into results (check_name, passed, detail) values ('normal sahip: berber hesap bağlantısını yönetebilir', n = 1, format('%s satır', n));
+
+  -- 6c. Dosya deposunda SVG gibi çalıştırılabilir içerik barındırabilen türler kapalı
+  select count(*) into n from storage.buckets
+  where id = 'shop-assets' and allowed_mime_types <@ array['image/jpeg', 'image/png', 'image/webp'];
+  insert into results (check_name, passed, detail) values ('shop-assets: sadece jpeg/png/webp', n = 1, format('%s', n));
+end;
+$$;
+
 -- Sonuç: tüm satırlarda passed = true olmalı
 select id, passed, check_name, detail from results order by id;
 

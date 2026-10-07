@@ -2,7 +2,8 @@
  * Demo dükkanı sıfırlama (Bölüm 12): satış gösterimlerinde veriler karışınca kullanılır.
  * 1) Eski demo dükkanın Storage'a yüklenmiş dosyalarını siler
  * 2) Veritabanında demo verisini baştan kurar (public.reset_demo_shop)
- * 3) Demo panel hesaplarını (varsa) yeni dükkan kaydına yeniden bağlar — şifreler DEĞİŞMEZ
+ * 3) Demo panel hesaplarını (varsa) yeni dükkan kaydına yeniden bağlar. DEMO_*_PASSWORD tanımlıysa
+ *    şifreler de bu değerlere geri alınır (ziyaretçi Supabase API'si üzerinden şifreyi değiştirmiş olabilir).
  *
  * Demo hesapları .env.local'deki DEMO_OWNER_EMAIL / DEMO_BARBER_EMAIL / DEMO_BARBER_NAME ile belirlenir.
  * Yönetici panelindeki buton bu dosyayı, npm run demo:reset ise scripts/demo-reset.mjs'i kullanır
@@ -10,6 +11,7 @@
  */
 import "server-only";
 import { findAuthUserIdByEmail } from "./auth-users";
+import { getShopBySlug } from "./shops";
 import { createAdminClient } from "./supabase/admin";
 
 export type DemoRole = "owner" | "barber";
@@ -43,25 +45,54 @@ export async function resetDemoShop(): Promise<{ linkedAccounts: string[] }> {
   const { data: shopId, error } = await admin.rpc("reset_demo_shop");
   if (error || !shopId) throw new Error(`Demo sıfırlanamadı: ${error?.message ?? "bilinmeyen hata"}`);
 
-  // 3) Demo hesaplarını bağla
+  // 3) Demo hesaplarını bağla (ve şifreleri geri al)
   const linked: string[] = [];
-  const ownerEmail = process.env.DEMO_OWNER_EMAIL;
-  if (ownerEmail) {
-    const userId = await findAuthUserIdByEmail(ownerEmail);
-    if (userId) {
-      await admin.from("shop_members").insert({ shop_id: shopId, user_id: userId, role: "owner" });
-      linked.push(ownerEmail);
-    }
-  }
-  const barberEmail = process.env.DEMO_BARBER_EMAIL;
-  const barberName = process.env.DEMO_BARBER_NAME || "Can Kaya";
-  if (barberEmail) {
-    const userId = await findAuthUserIdByEmail(barberEmail);
-    if (userId) {
-      await admin.from("shop_members").insert({ shop_id: shopId, user_id: userId, role: "barber" });
-      await admin.from("barbers").update({ user_id: userId }).eq("shop_id", shopId).eq("name", barberName);
-      linked.push(barberEmail);
-    }
+  for (const role of ["owner", "barber"] as const) {
+    const email = await repairDemoAccount(role, shopId);
+    if (email) linked.push(email);
   }
   return { linkedAccounts: linked };
+}
+
+/**
+ * Bir demo hesabını kullanılabilir hale getirir: hesap yoksa oluşturur, şifre tanımlıysa şifreyi
+ * geri alır, dükkan üyeliğini ve (berberse) berber kaydı bağlantısını tamamlar.
+ *
+ * Neden gerekli: "…olarak dene" ile giren bir ziyaretçi, Supabase Auth API'sini doğrudan kullanarak
+ * demo hesabının şifresini değiştirebilir (Supabase'de kullanıcının kendi şifresini değiştirmesini
+ * hesap bazında engellemenin ücretsiz bir yolu yok). Demo girişi başarısız olunca ve her gece bu
+ * onarım çalışır; böylece demo kalıcı olarak kapatılamaz.
+ * @returns bağlanan hesabın e-postası; e-posta tanımlı değilse null
+ */
+export async function repairDemoAccount(role: DemoRole, shopId?: string): Promise<string | null> {
+  const email = role === "owner" ? process.env.DEMO_OWNER_EMAIL : process.env.DEMO_BARBER_EMAIL;
+  if (!email) return null;
+  const password = demoCredentials(role)?.password;
+  const admin = createAdminClient();
+
+  const demoShopId = shopId ?? (await getShopBySlug("demo"))?.id;
+  if (!demoShopId) return null;
+
+  let userId = await findAuthUserIdByEmail(email);
+  if (!userId) {
+    if (!password) return null; // şifre bilinmeden hesap açılmaz (npm run demo:reset açar ve şifreyi yazar)
+    const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+    if (error || !data.user) throw new Error(`Demo hesabı oluşturulamadı: ${error?.message ?? "bilinmeyen hata"}`);
+    userId = data.user.id;
+  } else if (password) {
+    await admin.auth.admin.updateUserById(userId, { password });
+  }
+
+  const { data: member } = await admin
+    .from("shop_members")
+    .select("id")
+    .eq("shop_id", demoShopId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!member) await admin.from("shop_members").insert({ shop_id: demoShopId, user_id: userId, role });
+  if (role === "barber") {
+    const barberName = process.env.DEMO_BARBER_NAME || "Can Kaya";
+    await admin.from("barbers").update({ user_id: userId }).eq("shop_id", demoShopId).eq("name", barberName);
+  }
+  return email;
 }

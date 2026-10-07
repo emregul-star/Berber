@@ -689,6 +689,11 @@ Her aşama sonunda kabul kriterleri kontrol edilecek.
 - **Erişilebilirlik:** axe-core ile WCAG 2.1 AA taraması (tanıtım, dükkan sitesi, randevu sihirbazı adımları, KVKK, giriş sayfaları, 13 panel sayfası): bulunan kontrast ve ARIA sorunları düzeltildi, sonuç temiz. Tanıtım sayfasında "İçeriğe geç" linki var.
 - **Tanıtım sayfası:** Özellikler, ekran görüntüleri (`public/landing/`, demo dükkandan alındı), nasıl çalışır, demo linkleri; `NEXT_PUBLIC_PLATFORM_SUPPORT_WHATSAPP` tanımlıysa WhatsApp iletişim butonu.
 
+**Güvenlik denetimi (2026-10-07, yayından sonra):**
+- Kontrol edilenler: tüm tablolarda RLS ve kuralların içeriği; canlı API'ye giriş yapmamış ziyaretçi, demo berber ve demo sahibi olarak 46 saldırı denemesi (başka berberin/dükkanın randevusunu okuma, değiştirme, silme, aktarma; abonelik/ödeme/IBAN/yönetici yetkisi; başka dükkanın dosya klasörü); git geçmişi ve canlı sitenin JS dosyalarında gizli anahtar taraması. Hepsi engellendi / temiz.
+- Bulunan ve düzeltilen: (1) Herkese açık demoda ziyaretçi, Supabase API'sini doğrudan kullanarak demo hesabının şifresini değiştirebiliyor ve demo üyeliklerini silebiliyordu (demo kalıcı olarak kapanabilirdi) → üyelik/berber bağlantısı değişikliği veritabanında engellendi, demo girişi bozulmuş hesabı kendiliğinden onarır, gece sıfırlaması şifreleri geri alır. (2) Dosya deposu SVG kabul ediyordu → sadece jpeg/png/webp. (3) Bir dükkanın üyeleri başka dükkanların izin sebeplerini okuyabiliyordu → sadece kendi dükkanı. (4) Güvenlik başlıkları eklendi (iframe'e gömme engeli, nosniff, referrer ve izin politikaları).
+- Bilinen, kabul edilen: "sızdırılmış şifre koruması" sadece Supabase Pro'da (ücretli). Demo sahibi olarak giren ziyaretçi demo içeriğini (ad, açıklama, görseller) değiştirebilir; her gece sıfırlanır.
+
 ---
 
 ## 16. Yayına Alma Rehberi (README'ye de eklenecek)
